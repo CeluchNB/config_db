@@ -1,4 +1,7 @@
+#![allow(warnings)]
+
 use std::any::Any;
+use std::env;
 use std::fs::File;
 
 enum DatabaseImplementation {
@@ -82,6 +85,20 @@ struct WAL {
     file: File,
 }
 
+const VALID_ARGUMENTS: &[&str] = &["create_db"];
+
+fn validate_args(args: &[String]) -> Result<bool, String> {
+    let op: &str = &args[1];
+    if !VALID_ARGUMENTS.contains(&op) {
+        return Err("Invalid operation".to_string());
+    }
+    return Ok(true);
+}
+
 fn main() {
-    println!("Hello, world!");
+    let args: Vec<String> = env::args().collect();
+    match validate_args(&args) {
+        Ok(val) => println!("Successful operation!"),
+        Err(message) => eprintln!("Got err: {message}"),
+    }
 }
