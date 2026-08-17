@@ -85,19 +85,75 @@ struct WAL {
     file: File,
 }
 
-const VALID_ARGUMENTS: &[&str] = &["create_db"];
+trait DBOperation {
+    const OP_NAME: &'static str;
 
-fn validate_args(args: &[String]) -> Result<bool, String> {
-    let op: &str = &args[1];
-    if !VALID_ARGUMENTS.contains(&op) {
-        return Err("Invalid operation".to_string());
+    fn op(&self) -> Result<(), String> {
+        match self.validate() {
+            Ok(()) => (),
+            Err(message) => return Err(message),
+        }
+        self.write_ahead();
+        return self.perform();
     }
-    return Ok(true);
+
+    fn validate(&self) -> Result<(), String>;
+    fn perform(&self) -> Result<(), String>;
+    fn args(&self) -> &[String];
+
+    fn write_ahead(&self) {
+        let args = self.args();
+        let op: &str = &args[0];
+        // Write to WAL
+        println!("Validating: {op}");
+    }
+}
+
+struct CreateDBOperation<'a> {
+    args: &'a [String],
+}
+
+impl<'a> DBOperation for CreateDBOperation<'a> {
+    const OP_NAME: &'static str = "create_db";
+
+    fn validate(&self) -> Result<(), String> {
+        let op: &str = &(self.args[0]);
+        println!("Validating: {op}");
+        return Ok(());
+    }
+
+    fn perform(&self) -> Result<(), String> {
+        let arg: &str = &(self.args[1]);
+        println!("Creating DB: {arg}");
+        return Ok(());
+    }
+
+    fn args(&self) -> &[String] {
+        return &(self.args);
+    }
+}
+
+fn initialize() {
+    // Create directory in ~/.configdb/data if not already exists
+    // Create global WAL if not already exists
+}
+
+fn operate(args: &[String]) -> Result<(), String> {
+    let op: &str = &args[0];
+    let name = CreateDBOperation::OP_NAME;
+
+    println!("OP NAME {name} {op}");
+    match op {
+        CreateDBOperation::OP_NAME => CreateDBOperation { args: &args }.op(),
+        _ => Err("Invalid operation".to_string()),
+    }
 }
 
 fn main() {
+    initialize();
+
     let args: Vec<String> = env::args().collect();
-    match validate_args(&args) {
+    match operate(&args[1..]) {
         Ok(val) => println!("Successful operation!"),
         Err(message) => eprintln!("Got err: {message}"),
     }
