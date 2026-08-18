@@ -12,9 +12,7 @@ fn data_dir() -> std::io::Result<bool> {
     let base_path = format!("{}{}", DIR_PATH, DATA_PATH);
     let path = Path::new(&base_path);
 
-    println!("PATH {}", base_path);
     if path.is_dir() {
-        println!("IS DIR");
         return Ok(true);
     } else {
         create_dir_all(base_path)?;
@@ -24,27 +22,21 @@ fn data_dir() -> std::io::Result<bool> {
 
 fn user_file() -> std::io::Result<()> {
     let users_path = format!("{}{}{}", DIR_PATH, DATA_PATH, USERS_FILE);
-    OpenOptions::new()
-        .read(true)
-        .create(true)
-        .open(users_path)?;
+    let mut file = File::create(users_path)?;
 
     Ok(())
 }
 
 fn register_file() -> std::io::Result<()> {
     let register_path = format!("{}{}{}", DIR_PATH, DATA_PATH, REGISTER_FILE);
-    OpenOptions::new()
-        .read(true)
-        .create(true)
-        .open(register_path)?;
+    let mut file = File::create(register_path);
 
     Ok(())
 }
 
 fn global_wal_file() -> std::io::Result<()> {
     let wal_path = format!("{}{}{}", DIR_PATH, DATA_PATH, GLOBAL_WAL_FILE);
-    OpenOptions::new().read(true).create(true).open(wal_path)?;
+    let mut file = File::create(wal_path);
 
     Ok(())
 }

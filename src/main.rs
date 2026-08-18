@@ -124,13 +124,11 @@ impl<'a> DBOperation for CreateDBOperation<'a> {
 
     fn validate(&self) -> Result<(), String> {
         let op: &str = &(self.args[0]);
-        println!("Validating: {op}");
         return Ok(());
     }
 
     fn perform(&self) -> Result<(), String> {
         let arg: &str = &(self.args[1]);
-        println!("Creating DB: {arg}");
         return Ok(());
     }
 
@@ -143,7 +141,6 @@ fn operate(args: &[String]) -> Result<(), String> {
     let op: &str = &args[0];
     let name = CreateDBOperation::OP_NAME;
 
-    println!("OP NAME {name} {op}");
     match op {
         CreateDBOperation::OP_NAME => CreateDBOperation { args: &args }.op(),
         _ => Err("Invalid operation".to_string()),
