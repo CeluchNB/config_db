@@ -1,8 +1,14 @@
 #![allow(warnings)]
 
+use crate::initializer::initialize;
+// use crate::operations::CreateDB;
+
 use std::any::Any;
 use std::env;
 use std::fs::File;
+use std::path::Path;
+
+pub mod initializer;
 
 enum DatabaseImplementation {
     BTree,
@@ -131,11 +137,6 @@ impl<'a> DBOperation for CreateDBOperation<'a> {
     fn args(&self) -> &[String] {
         return &(self.args);
     }
-}
-
-fn initialize() {
-    // Create directory in ~/.configdb/data if not already exists
-    // Create global WAL if not already exists
 }
 
 fn operate(args: &[String]) -> Result<(), String> {
