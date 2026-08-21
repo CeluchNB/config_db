@@ -1,3 +1,4 @@
+use crate::db_constants::{DATA_PATH, DIR_PATH, GLOBAL_WAL_FILE};
 use std::fs::OpenOptions;
 use std::io::Write;
 
@@ -18,10 +19,9 @@ pub trait Base {
         let args = self.args();
         let mut command = args.join(" ");
         command.push('\n');
-        let mut file = OpenOptions::new()
-            .write(true)
-            .append(true)
-            .open("/Users/noah/.configdb/data/GLOBAL_WAL")?;
+
+        let wal_path = format!("{}{}{}", DIR_PATH, DATA_PATH, GLOBAL_WAL_FILE);
+        let mut file = OpenOptions::new().write(true).append(true).open(wal_path)?;
         file.write_all(command.as_bytes())?;
         Ok(())
     }

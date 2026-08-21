@@ -1,12 +1,7 @@
+use super::db_constants::{DATA_PATH, DIR_PATH, GLOBAL_WAL_FILE, REGISTER_FILE, USERS_FILE};
 use std::fs::{File, OpenOptions, create_dir_all};
 use std::io;
 use std::path::Path;
-
-const DIR_PATH: &str = "/Users/noah/.configdb";
-const DATA_PATH: &str = "/data";
-const GLOBAL_WAL_FILE: &str = "/GLOBAL_WAL";
-const USERS_FILE: &str = "/USERS";
-const REGISTER_FILE: &str = "/REGISTER";
 
 fn data_dir() -> std::io::Result<bool> {
     let base_path = format!("{}{}", DIR_PATH, DATA_PATH);
