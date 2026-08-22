@@ -1,7 +1,7 @@
 #![allow(warnings)]
 
 use crate::initializer::initialize;
-use crate::operations::{Base, CreateDB};
+use crate::operations::{Base, ConnectDB, CreateDB, CreateUser, SelectUser};
 
 use std::any::Any;
 use std::env;
@@ -30,6 +30,9 @@ fn operate(args: &[String]) -> std::io::Result<()> {
 
     match op {
         CreateDB::OP_NAME => CreateDB::new(args).op(),
+        CreateUser::OP_NAME => CreateUser::new(args).op(),
+        ConnectDB::OP_NAME => ConnectDB::new(args).op(),
+        SelectUser::OP_NAME => SelectUser::new(args).op(),
         _ => {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
