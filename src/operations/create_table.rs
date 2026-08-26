@@ -1,8 +1,8 @@
 use super::Base;
-use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH};
+use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE, TABLE_INFO_FILE};
 use std::collections::HashMap;
-use std::fs;
-use std::io;
+use std::fs::{self, File, OpenOptions};
+use std::io::{self, Write};
 use std::path::Path;
 
 pub struct CreateTable<'a> {
@@ -18,6 +18,22 @@ impl<'a> CreateTable<'a> {
         let current_user_path = format!("{}{}{}", DIR_PATH, DATA_PATH, CURRENT_USER_FILE);
         let current_user = fs::read_to_string(&current_user_path)?;
         Ok(current_user)
+    }
+
+    fn current_db(&self, user: &String) -> std::io::Result<String> {
+        let register_path = format!("{}{}{}", DIR_PATH, DATA_PATH, REGISTER_FILE);
+        let register_string = fs::read_to_string(&register_path)?;
+        for line in register_string.lines() {
+            if line.contains(user) {
+                let split_line: Vec<&str> = line.split(' ').collect();
+                return Ok(String::from(split_line[1]));
+            }
+        }
+
+        Err(io::Error::new(
+            io::ErrorKind::Other,
+            "User is not connected to DB",
+        ))
     }
 
     fn parse_opts(&self) -> std::io::Result<HashMap<String, String>> {
@@ -72,18 +88,31 @@ impl<'a> Base for CreateTable<'a> {
             return Err(io::Error::new(io::ErrorKind::Other, "No active user"));
         }
 
-        // let table_name = &self.args[1];
+        let current_db = self.current_db(&current_user)?;
 
-        // Get connected DB dir
-        let table_name = format!("/{}", &(self.args[1]));
-
-        let table_dir = format!("{}{}{}", DATA_PATH, DIR_PATH, table_name);
+        let table_dir = format!(
+            "{}{}/{}/{}/{}",
+            DIR_PATH,
+            DATA_PATH,
+            current_db,
+            "tables",
+            &(self.args[1])
+        );
         let table_path = Path::new(&table_dir);
 
         if table_path.is_dir() {
             return Err(io::Error::new(
                 io::ErrorKind::AlreadyExists,
-                "Database already exists",
+                "Table already exists",
+            ));
+        }
+
+        let opts = self.parse_opts()?;
+        let field_opt: &str = opts.get("--fields").map(|o| o.as_str()).unwrap_or("");
+        if field_opt.is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "Must have at least one field",
             ));
         }
 
@@ -91,17 +120,45 @@ impl<'a> Base for CreateTable<'a> {
     }
 
     fn perform(&self) -> std::io::Result<()> {
-        let table_name = format!("/{}", &(self.args[1]));
+        let current_user = self.current_user()?;
+        let current_db = self.current_db(&current_user)?;
 
-        let table_dir = format!("{}{}{}/tables", DIR_PATH, DATA_PATH, table_name);
-        let table_path = Path::new(&table_dir);
+        let table_dir: String = format!(
+            "{}{}/{}/{}/{}",
+            DIR_PATH,
+            DATA_PATH,
+            current_db,
+            "tables",
+            &(self.args[1])
+        );
 
-        let opts: HashMap<String, String> = self.parse_opts()?;
+        fs::create_dir_all(&table_dir);
 
-        println!("Table Name: {}", table_name);
-        for (opt, val) in &opts {
-            println!("Opt: {}, Val: {}", opt, val);
+        let info_file = format!("{}{}", &table_dir, TABLE_INFO_FILE);
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .append(true)
+            .create(true)
+            .open(info_file)?;
+        let opts = self.parse_opts()?;
+
+        let impl_opt: &str = opts.get("--impl").map(|o| o.as_str()).unwrap_or("b");
+        let impl_string = format!("Implementation={}\n", impl_opt);
+        file.write_all(impl_string.as_bytes());
+
+        let idx_opt: &str = opts.get("--idx").map(|o| o.as_str()).unwrap_or("");
+        if idx_opt != "" {
+            let idx_string = format!("Index={}\n", idx_opt);
+            file.write_all(idx_string.as_bytes());
         }
+
+        let field_opt: &String = opts.get("--fields").unwrap();
+        file.write_all("Fields\nid\n".as_bytes());
+        let field_vec: Vec<&str> = field_opt.split(" ").collect();
+        for field in field_vec {
+            file.write_all(format!("{}\n", field).as_bytes());
+        }
+
         Ok(())
     }
 

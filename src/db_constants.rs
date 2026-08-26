@@ -4,3 +4,4 @@ pub const GLOBAL_WAL_FILE: &str = "/GLOBAL_WAL";
 pub const USERS_FILE: &str = "/USERS";
 pub const REGISTER_FILE: &str = "/REGISTER";
 pub const CURRENT_USER_FILE: &str = "/CURRENT_USER";
+pub const TABLE_INFO_FILE: &str = "/TABLE_INFO";
