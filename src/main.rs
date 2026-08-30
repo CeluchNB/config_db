@@ -10,6 +10,7 @@ use std::io;
 use std::path::Path;
 
 pub mod db_constants;
+pub mod file_ops;
 pub mod initializer;
 pub mod operations;
 

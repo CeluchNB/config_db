@@ -1,5 +1,6 @@
 use super::Base;
 use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE, TABLE_INFO_FILE};
+use crate::file_ops::{Sequence, TableInfo};
 use std::collections::HashMap;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Write};
@@ -122,42 +123,18 @@ impl<'a> Base for CreateTable<'a> {
     fn perform(&self) -> std::io::Result<()> {
         let current_user = self.current_user()?;
         let current_db = self.current_db(&current_user)?;
-
-        let table_dir: String = format!(
-            "{}{}/{}/{}/{}",
-            DIR_PATH,
-            DATA_PATH,
-            current_db,
-            "tables",
-            &(self.args[1])
-        );
-
-        fs::create_dir_all(&table_dir);
-
-        let info_file = format!("{}{}", &table_dir, TABLE_INFO_FILE);
-        let mut file = fs::OpenOptions::new()
-            .write(true)
-            .append(true)
-            .create(true)
-            .open(info_file)?;
         let opts = self.parse_opts()?;
 
         let impl_opt: &str = opts.get("--impl").map(|o| o.as_str()).unwrap_or("b");
-        let impl_string = format!("Implementation={}\n", impl_opt);
-        file.write_all(impl_string.as_bytes());
-
         let idx_opt: &str = opts.get("--idx").map(|o| o.as_str()).unwrap_or("");
-        if idx_opt != "" {
-            let idx_string = format!("Index={}\n", idx_opt);
-            file.write_all(idx_string.as_bytes());
-        }
-
         let field_opt: &String = opts.get("--fields").unwrap();
-        file.write_all("Fields\nid\n".as_bytes());
-        let field_vec: Vec<&str> = field_opt.split(" ").collect();
-        for field in field_vec {
-            file.write_all(format!("{}\n", field).as_bytes());
-        }
+        let fields: Vec<&str> = field_opt.split(" ").collect();
+
+        let mut table_info = TableInfo::new(&current_db, &(self.args[1]));
+        table_info.initialize_file(impl_opt, idx_opt, fields);
+
+        let mut sequence_file = Sequence::new(&current_db, &(self.args[1]));
+        sequence_file.initialize_file();
 
         Ok(())
     }
