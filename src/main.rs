@@ -1,7 +1,9 @@
 #![allow(warnings)]
 
 use crate::initializer::initialize;
-use crate::operations::{Base, ConnectDB, CreateDB, CreateTable, CreateUser, Insert, SelectUser};
+use crate::operations::{
+    Base, ConnectDB, CreateDB, CreateTable, CreateUser, Insert, SelectUser, Start,
+};
 
 use std::any::Any;
 use std::env;
@@ -36,6 +38,7 @@ fn operate(args: &[String]) -> std::io::Result<()> {
         CreateTable::OP_NAME => CreateTable::new(args).op(),
         SelectUser::OP_NAME => SelectUser::new(args).op(),
         Insert::OP_NAME => Insert::new(args).op(),
+        Start::OP_NAME => Start::new(args).op(),
         _ => {
             return Err(io::Error::new(
                 io::ErrorKind::Other,

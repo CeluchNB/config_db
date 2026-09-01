@@ -1,5 +1,7 @@
 use super::Base;
-use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE, TABLE_INFO_FILE};
+use crate::db_constants::{
+    ARG_LEN, CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE, TABLE_INFO_FILE,
+};
 use crate::file_ops::{Sequence, TableInfo};
 use std::collections::HashMap;
 use std::fs;
@@ -75,6 +77,8 @@ impl<'a> Base for Insert<'a> {
         if expected_fields != field_args_vec {
             return Err(io::Error::new(io::ErrorKind::Other, "Fields do not match"));
         }
+
+        // TODO: VALIDATE ARG LEN <= 50 bytes
         Ok(())
     }
 
@@ -84,15 +88,6 @@ impl<'a> Base for Insert<'a> {
         let current_user = self.current_user()?;
         let current_db = self.current_db(&current_user)?;
         let table_name = &args[1];
-        // ensure table exists
-        let table_dir = format!(
-            "{}{}/{}{}/{}",
-            DIR_PATH, DATA_PATH, current_db, "/tables", table_name
-        );
-        let table_path = Path::new(&table_dir);
-        if !table_path.is_dir() {
-            return Err(io::Error::new(io::ErrorKind::Other, "Table does not exist"));
-        }
 
         let table_info = TableInfo::new(&current_db, table_name);
         let mut sequence = Sequence::new(&current_db, table_name);
@@ -101,7 +96,6 @@ impl<'a> Base for Insert<'a> {
         let field_args = &args[2..];
         let mut field_args_vec: Vec<String> = Vec::from(field_args);
         field_args_vec.sort();
-        field_args_vec.insert(0, format!("id={}", id.to_string()));
 
         let values: Vec<String> = field_args_vec
             .iter()
@@ -111,7 +105,30 @@ impl<'a> Base for Insert<'a> {
             })
             .collect();
 
-        println!("{}", values.join(","));
+        let bytes: Vec<Vec<u8>> = values
+            .iter()
+            .map(|s| {
+                let bytes: &[u8] = s.as_bytes();
+                let padding = 50 - bytes.len();
+                let mut padded = vec![b'0'; padding];
+                padded.extend_from_slice(bytes);
+                Vec::from(padded)
+            })
+            .collect();
+        let id_bytes = id.to_be_bytes();
+
+        let table_dir = format!(
+            "{}{}/{}{}/{}",
+            DIR_PATH, DATA_PATH, current_db, "/tables", table_name
+        );
+        // get correct file
+        let file_path = format!("{}/1", table_dir);
+
+        // write to correct location in file
+        for byte_list in bytes {
+            println!("{:?}", byte_list);
+        }
+        // pad bytes
         // generate string row
         //
         // LSM -> insert into memtable (might need more like a storetable)
