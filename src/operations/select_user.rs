@@ -1,6 +1,6 @@
 use super::Base;
 use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, USERS_FILE};
-use std::io::{self};
+use std::io;
 
 pub struct SelectUser<'a> {
     args: &'a [String],
