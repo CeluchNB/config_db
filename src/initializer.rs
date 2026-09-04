@@ -1,5 +1,5 @@
 use super::db_constants::{DATA_PATH, DIR_PATH, GLOBAL_WAL_FILE, REGISTER_FILE, USERS_FILE};
-use std::fs::{File, OpenOptions, create_dir_all};
+use std::fs::{File, create_dir_all};
 use std::io;
 use std::path::Path;
 
@@ -17,35 +17,40 @@ fn data_dir() -> std::io::Result<bool> {
 
 fn user_file() -> std::io::Result<()> {
     let users_path = format!("{}{}{}", DIR_PATH, DATA_PATH, USERS_FILE);
-    let mut file = File::create(users_path)?;
+    File::create(users_path)?;
 
     Ok(())
 }
 
 fn register_file() -> std::io::Result<()> {
     let register_path = format!("{}{}{}", DIR_PATH, DATA_PATH, REGISTER_FILE);
-    let mut file = File::create(register_path);
+    File::create(register_path)?;
 
     Ok(())
 }
 
 fn global_wal_file() -> std::io::Result<()> {
     let wal_path = format!("{}{}{}", DIR_PATH, DATA_PATH, GLOBAL_WAL_FILE);
-    let mut file = File::create(wal_path);
+    File::create(wal_path)?;
 
     Ok(())
 }
 
-pub fn initialize() {
+pub fn initialize() -> std::io::Result<()> {
     match data_dir() {
         Ok(false) => {
-            user_file();
-            register_file();
-            global_wal_file();
+            user_file()?;
+            register_file()?;
+            global_wal_file()?;
+            Ok(())
         }
-        Ok(true) => {}
+        Ok(true) => Ok(()),
         Err(_) => {
             eprintln!("Error initializing service");
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Could not initialize service",
+            ))
         }
     }
 }

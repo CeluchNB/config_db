@@ -1,9 +1,9 @@
 use super::Base;
-use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE, TABLE_INFO_FILE};
+use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE};
 use crate::file_ops::{Sequence, TableInfo};
 use std::collections::HashMap;
-use std::fs::{self, File, OpenOptions};
-use std::io::{self, Write};
+use std::fs;
+use std::io;
 use std::path::Path;
 
 pub struct CreateTable<'a> {
@@ -131,10 +131,10 @@ impl<'a> Base for CreateTable<'a> {
         let fields: Vec<&str> = field_opt.split(" ").collect();
 
         let mut table_info = TableInfo::new(&current_db, &(self.args[1]));
-        table_info.initialize_file(impl_opt, idx_opt, fields);
+        table_info.initialize_file(impl_opt, idx_opt, fields)?;
 
         let mut sequence_file = Sequence::new(&current_db, &(self.args[1]));
-        sequence_file.initialize_file();
+        sequence_file.initialize_file()?;
 
         Ok(())
     }

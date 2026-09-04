@@ -12,7 +12,7 @@ impl TableInfo {
             "{}{}/{}/{}/{}",
             DIR_PATH, DATA_PATH, db_name, "tables", table_name
         );
-        fs::create_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
 
         let file_path = format!("{}{}", dir, TABLE_INFO_FILE);
         let table_info_result = OpenOptions::new()
@@ -43,9 +43,9 @@ impl TableInfo {
             .concat()
             .join("\n");
 
-        self.table_info_file.write_all(impl_string.as_bytes());
-        self.table_info_file.write_all(index_string.as_bytes());
-        self.table_info_file.write_all(full_fields.as_bytes());
+        self.table_info_file.write_all(impl_string.as_bytes())?;
+        self.table_info_file.write_all(index_string.as_bytes())?;
+        self.table_info_file.write_all(full_fields.as_bytes())?;
         Ok(())
     }
 
