@@ -1,8 +1,6 @@
 use super::Base;
 use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, USERS_FILE};
-use std::fs::{File, OpenOptions};
-use std::io::{self, Write};
-use std::path::Path;
+use std::io::{self};
 
 pub struct SelectUser<'a> {
     args: &'a [String],

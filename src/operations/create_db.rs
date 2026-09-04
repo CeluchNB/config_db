@@ -53,7 +53,7 @@ impl<'a> Base for CreateDB<'a> {
         let table_dir = format!("{}{}{}/tables", DIR_PATH, DATA_PATH, table_name);
         let table_path = Path::new(&table_dir);
 
-        create_dir_all(table_path);
+        create_dir_all(table_path)?;
 
         return Ok(());
     }

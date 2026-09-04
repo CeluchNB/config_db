@@ -1,9 +1,6 @@
 use super::Base;
-use crate::db_constants::{
-    ARG_LEN, CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE, TABLE_INFO_FILE,
-};
+use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE};
 use crate::file_ops::{Sequence, TableInfo};
-use std::collections::HashMap;
 use std::fs;
 use std::io;
 use std::path::Path;

@@ -1,7 +1,6 @@
 use super::Base;
 use crate::db_constants::{DATA_PATH, DIR_PATH, REGISTER_FILE};
-use std::fs::{OpenOptions, create_dir_all};
-use std::io::{self, BufRead, BufReader};
+use std::io;
 use std::path::Path;
 
 pub struct ConnectDB<'a> {

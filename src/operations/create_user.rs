@@ -1,8 +1,7 @@
 use super::Base;
 use crate::db_constants::{DATA_PATH, DIR_PATH, USERS_FILE};
-use std::fs::{File, OpenOptions};
+use std::fs::OpenOptions;
 use std::io::{self, Write};
-use std::path::Path;
 
 pub struct CreateUser<'a> {
     args: &'a [String],
