@@ -3,17 +3,17 @@ use crate::db_constants::{DATA_PATH, DIR_PATH, REGISTER_FILE};
 use std::io;
 use std::path::Path;
 
-pub struct ConnectDB<'a> {
-    args: &'a [String],
+pub struct ConnectDB {
+    args: Vec<String>,
 }
 
-impl<'a> ConnectDB<'a> {
-    pub fn new(args: &'a [String]) -> Self {
+impl ConnectDB {
+    pub fn new(args: Vec<String>) -> Self {
         Self { args: args }
     }
 }
 
-impl<'a> Base for ConnectDB<'a> {
+impl Base for ConnectDB {
     const OP_NAME: &'static str = "connect_db";
 
     fn validate(&self) -> std::io::Result<()> {
@@ -31,8 +31,7 @@ impl<'a> Base for ConnectDB<'a> {
             ));
         }
 
-        let user_name: &str = &self.args[1];
-        let db_name: &str = &self.args[2];
+        let db_name: String = self.args[2].clone();
 
         let db_file = format!("{}{}/{}", DIR_PATH, DATA_PATH, db_name);
         let db_path = Path::new(&db_file);
@@ -48,26 +47,27 @@ impl<'a> Base for ConnectDB<'a> {
     }
 
     fn perform(&self) -> std::io::Result<()> {
-        let user_name: &str = &self.args[1];
-        let db_name: &str = &self.args[2];
+        let user_name: String = self.args[1].clone();
+        let db_name: String = self.args[2].clone();
 
         let register_path = format!("{}{}{}", DIR_PATH, DATA_PATH, REGISTER_FILE);
 
         let contents = std::fs::read_to_string(&register_path)?;
-        let mut new_contents: Vec<&str> = contents
+        let mut new_contents: Vec<String> = contents
             .lines()
-            .filter(|line| (*line).contains(db_name))
+            .map(|s| String::from(s))
+            .filter(|line| line.contains(&db_name))
             .collect();
 
         let new_line = format!("{} {}", user_name, db_name);
-        new_contents.push(&new_line);
+        new_contents.push(new_line);
 
         std::fs::write(register_path, new_contents.join("\n"))?;
 
         return Ok(());
     }
 
-    fn args(&self) -> &[String] {
+    fn args(&self) -> &Vec<String> {
         return &(self.args);
     }
 }

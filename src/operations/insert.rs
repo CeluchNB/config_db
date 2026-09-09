@@ -5,12 +5,12 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-pub struct Insert<'a> {
-    args: &'a [String],
+pub struct Insert {
+    args: Vec<String>,
 }
 
-impl<'a> Insert<'a> {
-    pub fn new(args: &'a [String]) -> Self {
+impl Insert {
+    pub fn new(args: Vec<String>) -> Self {
         Self { args: args }
     }
 
@@ -37,15 +37,13 @@ impl<'a> Insert<'a> {
     }
 }
 
-impl<'a> Base for Insert<'a> {
+impl Base for Insert {
     const OP_NAME: &'static str = "insert";
 
     fn validate(&self) -> std::io::Result<()> {
-        let args = self.args();
-
         let current_user = self.current_user()?;
         let current_db = self.current_db(&current_user)?;
-        let table_name = &args[1];
+        let table_name: String = self.args[1].clone();
         // ensure table exists
         let table_dir = format!(
             "{}{}/{}{}/{}",
@@ -56,11 +54,11 @@ impl<'a> Base for Insert<'a> {
             return Err(io::Error::new(io::ErrorKind::Other, "Table does not exist"));
         }
 
-        let table_info = TableInfo::new(&current_db, table_name);
+        let table_info = TableInfo::new(&current_db, &table_name);
         let mut expected_fields: Vec<String> = table_info.read_fields()?;
         expected_fields.sort();
 
-        let field_args = &args[2..];
+        let field_args: Vec<String> = self.args[2..].to_vec();
         let mut field_args_vec: Vec<String> = Vec::from(field_args)
             .iter()
             .map(|s| {
@@ -80,17 +78,15 @@ impl<'a> Base for Insert<'a> {
     }
 
     fn perform(&self) -> std::io::Result<()> {
-        let args = self.args();
-
         let current_user = self.current_user()?;
         let current_db = self.current_db(&current_user)?;
-        let table_name = &args[1];
+        let table_name = self.args[1].clone();
 
-        let table_info = TableInfo::new(&current_db, table_name);
-        let mut sequence = Sequence::new(&current_db, table_name);
+        let table_info = TableInfo::new(&current_db, &table_name);
+        let mut sequence = Sequence::new(&current_db, &table_name);
         let id = sequence.increment_sequence()?;
 
-        let field_args = &args[2..];
+        let field_args = self.args[2..].to_vec();
         let mut field_args_vec: Vec<String> = Vec::from(field_args);
         field_args_vec.sort();
 
@@ -137,7 +133,7 @@ impl<'a> Base for Insert<'a> {
         Ok(())
     }
 
-    fn args(&self) -> &[String] {
+    fn args(&self) -> &Vec<String> {
         return &(self.args);
     }
 }

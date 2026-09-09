@@ -7,7 +7,7 @@ pub struct TableInfo {
 }
 
 impl TableInfo {
-    pub fn new(db_name: &str, table_name: &str) -> Self {
+    pub fn new(db_name: &String, table_name: &String) -> Self {
         let dir = format!(
             "{}{}/{}/{}/{}",
             DIR_PATH, DATA_PATH, db_name, "tables", table_name
@@ -32,16 +32,14 @@ impl TableInfo {
 
     pub fn initialize_file(
         &mut self,
-        implementation: &str,
-        index: &str,
-        fields: Vec<&str>,
+        implementation: &String,
+        index: &String,
+        fields: &[String],
     ) -> std::io::Result<()> {
         let impl_string = format!("Implementation={}\n", implementation);
         let index_string = format!("Index={}\n", index);
-        let field_header = vec!["Fields", "id"];
-        let full_fields: String = [field_header.as_slice(), fields.as_slice()]
-            .concat()
-            .join("\n");
+        let field_header: Vec<String> = vec![String::from("Fields"), String::from("id")];
+        let full_fields: String = [field_header.as_slice(), fields].concat().join("\n");
 
         self.table_info_file.write_all(impl_string.as_bytes())?;
         self.table_info_file.write_all(index_string.as_bytes())?;

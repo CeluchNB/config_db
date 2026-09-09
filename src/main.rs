@@ -18,12 +18,12 @@ fn operate(args: Vec<String>) -> std::io::Result<()> {
     let op: &str = &args[0];
 
     match op {
-        CreateDB::OP_NAME => CreateDB::new(&args).op(),
-        CreateUser::OP_NAME => CreateUser::new(&args).op(),
-        ConnectDB::OP_NAME => ConnectDB::new(&args).op(),
-        CreateTable::OP_NAME => CreateTable::new(&args).op(),
-        SelectUser::OP_NAME => SelectUser::new(&args).op(),
-        Insert::OP_NAME => Insert::new(&args).op(),
+        CreateDB::OP_NAME => CreateDB::new(args).op(),
+        CreateUser::OP_NAME => CreateUser::new(args).op(),
+        ConnectDB::OP_NAME => ConnectDB::new(args).op(),
+        CreateTable::OP_NAME => CreateTable::new(args).op(),
+        SelectUser::OP_NAME => SelectUser::new(args).op(),
+        Insert::OP_NAME => Insert::new(args).op(),
         _ => {
             return Err(io::Error::new(
                 io::ErrorKind::Other,

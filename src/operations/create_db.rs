@@ -4,17 +4,17 @@ use std::fs::create_dir_all;
 use std::io;
 use std::path::Path;
 
-pub struct CreateDB<'a> {
-    args: &'a [String],
+pub struct CreateDB {
+    args: Vec<String>,
 }
 
-impl<'a> CreateDB<'a> {
-    pub fn new(args: &'a [String]) -> Self {
+impl CreateDB {
+    pub fn new(args: Vec<String>) -> Self {
         Self { args: args }
     }
 }
 
-impl<'a> Base for CreateDB<'a> {
+impl Base for CreateDB {
     const OP_NAME: &'static str = "create_db";
 
     fn validate(&self) -> std::io::Result<()> {
@@ -32,7 +32,7 @@ impl<'a> Base for CreateDB<'a> {
             ));
         }
 
-        let table_name = format!("/{}", &(self.args[1]));
+        let table_name = format!("/{}", self.args[1]);
 
         let table_dir = format!("{}{}{}", DATA_PATH, DIR_PATH, table_name);
         let table_path = Path::new(&table_dir);
@@ -48,7 +48,7 @@ impl<'a> Base for CreateDB<'a> {
     }
 
     fn perform(&self) -> std::io::Result<()> {
-        let table_name = format!("/{}", &(self.args[1]));
+        let table_name = format!("/{}", self.args[1]);
 
         let table_dir = format!("{}{}{}/tables", DIR_PATH, DATA_PATH, table_name);
         let table_path = Path::new(&table_dir);
@@ -58,7 +58,7 @@ impl<'a> Base for CreateDB<'a> {
         return Ok(());
     }
 
-    fn args(&self) -> &[String] {
-        return &(self.args);
+    fn args(&self) -> &Vec<String> {
+        return &self.args;
     }
 }
