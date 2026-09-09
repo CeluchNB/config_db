@@ -6,12 +6,12 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-pub struct CreateTable<'a> {
-    args: &'a [String],
+pub struct CreateTable {
+    args: Vec<String>,
 }
 
-impl<'a> CreateTable<'a> {
-    pub fn new(args: &'a [String]) -> Self {
+impl CreateTable {
+    pub fn new(args: Vec<String>) -> Self {
         Self { args: args }
     }
 
@@ -73,7 +73,7 @@ impl<'a> CreateTable<'a> {
     }
 }
 
-impl<'a> Base for CreateTable<'a> {
+impl Base for CreateTable {
     const OP_NAME: &'static str = "create_table";
 
     fn validate(&self) -> std::io::Result<()> {
@@ -139,7 +139,7 @@ impl<'a> Base for CreateTable<'a> {
         Ok(())
     }
 
-    fn args(&self) -> &[String] {
+    fn args(&self) -> &Vec<String> {
         return &(self.args);
     }
 }

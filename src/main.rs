@@ -1,3 +1,4 @@
+// use crate::ds;
 use crate::initializer::initialize;
 use crate::operations::{Base, ConnectDB, CreateDB, CreateTable, CreateUser, Insert, SelectUser};
 
@@ -8,20 +9,21 @@ use std::process;
 use std::thread;
 
 pub mod db_constants;
+// pub mod ds;
 pub mod file_ops;
 pub mod initializer;
 pub mod operations;
 
-fn operate(args: &[String]) -> std::io::Result<()> {
+fn operate(args: Vec<String>) -> std::io::Result<()> {
     let op: &str = &args[0];
 
     match op {
-        CreateDB::OP_NAME => CreateDB::new(args).op(),
-        CreateUser::OP_NAME => CreateUser::new(args).op(),
-        ConnectDB::OP_NAME => ConnectDB::new(args).op(),
-        CreateTable::OP_NAME => CreateTable::new(args).op(),
-        SelectUser::OP_NAME => SelectUser::new(args).op(),
-        Insert::OP_NAME => Insert::new(args).op(),
+        CreateDB::OP_NAME => CreateDB::new(&args).op(),
+        CreateUser::OP_NAME => CreateUser::new(&args).op(),
+        ConnectDB::OP_NAME => ConnectDB::new(&args).op(),
+        CreateTable::OP_NAME => CreateTable::new(&args).op(),
+        SelectUser::OP_NAME => SelectUser::new(&args).op(),
+        Insert::OP_NAME => Insert::new(&args).op(),
         _ => {
             return Err(io::Error::new(
                 io::ErrorKind::Other,
@@ -66,14 +68,14 @@ fn start() -> std::io::Result<()> {
                 let str_arg: String = String::from_utf8(payload).unwrap();
                 args.push(str_arg);
             }
-            operate(&args)?;
+            operate(args)?;
             Ok(())
         });
     }
     Ok(())
 }
 
-fn process_args(args: &[String]) -> std::io::Result<()> {
+fn process_args(args: Vec<String>) -> std::io::Result<()> {
     let mut stream = TcpStream::connect("127.0.0.1:6380")?;
 
     for arg in args {
@@ -92,5 +94,5 @@ fn main() {
         start().unwrap();
     }
 
-    process_args(&args[1..]).unwrap();
+    process_args(args[1..].to_vec()).unwrap();
 }
