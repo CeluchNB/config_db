@@ -4,17 +4,17 @@ use std::fs::create_dir_all;
 use std::io;
 use std::path::Path;
 
-pub struct CreateDB {
-    args: Vec<String>,
+pub struct CreateDB<'a> {
+    args: &'a [String],
 }
 
-impl CreateDB {
-    pub fn new(args: Vec<String>) -> Self {
+impl<'a> CreateDB<'a> {
+    pub fn new(args: &'a [String]) -> Self {
         Self { args: args }
     }
 }
 
-impl Base for CreateDB {
+impl<'a> Base for CreateDB<'a> {
     const OP_NAME: &'static str = "create_db";
 
     fn validate(&self) -> std::io::Result<()> {
@@ -58,7 +58,7 @@ impl Base for CreateDB {
         return Ok(());
     }
 
-    fn args(&self) -> &Vec<String> {
+    fn args(&self) -> &[String] {
         return &self.args;
     }
 }

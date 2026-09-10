@@ -5,12 +5,12 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-pub struct Insert {
-    args: Vec<String>,
+pub struct Insert<'a> {
+    args: &'a [String],
 }
 
-impl Insert {
-    pub fn new(args: Vec<String>) -> Self {
+impl<'a> Insert<'a> {
+    pub fn new(args: &'a [String]) -> Self {
         Self { args: args }
     }
 
@@ -37,7 +37,7 @@ impl Insert {
     }
 }
 
-impl Base for Insert {
+impl<'a> Base for Insert<'a> {
     const OP_NAME: &'static str = "insert";
 
     fn validate(&self) -> std::io::Result<()> {
@@ -133,7 +133,7 @@ impl Base for Insert {
         Ok(())
     }
 
-    fn args(&self) -> &Vec<String> {
+    fn args(&self) -> &[String] {
         return &(self.args);
     }
 }

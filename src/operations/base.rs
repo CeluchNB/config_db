@@ -13,7 +13,7 @@ pub trait Base {
 
     fn validate(&self) -> std::io::Result<()>;
     fn perform(&self) -> std::io::Result<()>;
-    fn args(&self) -> &Vec<String>;
+    fn args(&self) -> &[String];
 
     fn write_ahead(&self) -> std::io::Result<()> {
         let args = self.args();

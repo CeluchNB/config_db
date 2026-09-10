@@ -3,17 +3,17 @@ use crate::db_constants::{DATA_PATH, DIR_PATH, USERS_FILE};
 use std::fs::OpenOptions;
 use std::io::{self, Write};
 
-pub struct CreateUser {
-    args: Vec<String>,
+pub struct CreateUser<'a> {
+    args: &'a [String],
 }
 
-impl CreateUser {
-    pub fn new(args: Vec<String>) -> Self {
+impl<'a> CreateUser<'a> {
+    pub fn new(args: &'a [String]) -> Self {
         Self { args: args }
     }
 }
 
-impl Base for CreateUser {
+impl<'a> Base for CreateUser<'a> {
     const OP_NAME: &'static str = "create_user";
 
     fn validate(&self) -> std::io::Result<()> {
@@ -63,7 +63,7 @@ impl Base for CreateUser {
         return Ok(());
     }
 
-    fn args(&self) -> &Vec<String> {
+    fn args(&self) -> &[String] {
         return &(self.args);
     }
 }

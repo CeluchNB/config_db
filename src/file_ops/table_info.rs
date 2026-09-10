@@ -7,7 +7,7 @@ pub struct TableInfo {
 }
 
 impl TableInfo {
-    pub fn new(db_name: &String, table_name: &String) -> Self {
+    pub fn new(db_name: &str, table_name: &str) -> Self {
         let dir = format!(
             "{}{}/{}/{}/{}",
             DIR_PATH, DATA_PATH, db_name, "tables", table_name
@@ -32,8 +32,8 @@ impl TableInfo {
 
     pub fn initialize_file(
         &mut self,
-        implementation: &String,
-        index: &String,
+        implementation: &str,
+        index: &str,
         fields: &[String],
     ) -> std::io::Result<()> {
         let impl_string = format!("Implementation={}\n", implementation);

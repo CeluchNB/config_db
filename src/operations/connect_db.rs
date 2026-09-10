@@ -3,17 +3,17 @@ use crate::db_constants::{DATA_PATH, DIR_PATH, REGISTER_FILE};
 use std::io;
 use std::path::Path;
 
-pub struct ConnectDB {
-    args: Vec<String>,
+pub struct ConnectDB<'a> {
+    args: &'a [String],
 }
 
-impl ConnectDB {
-    pub fn new(args: Vec<String>) -> Self {
+impl<'a> ConnectDB<'a> {
+    pub fn new(args: &'a [String]) -> Self {
         Self { args: args }
     }
 }
 
-impl Base for ConnectDB {
+impl<'a> Base for ConnectDB<'a> {
     const OP_NAME: &'static str = "connect_db";
 
     fn validate(&self) -> std::io::Result<()> {
@@ -67,7 +67,7 @@ impl Base for ConnectDB {
         return Ok(());
     }
 
-    fn args(&self) -> &Vec<String> {
+    fn args(&self) -> &[String] {
         return &(self.args);
     }
 }

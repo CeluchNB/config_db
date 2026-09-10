@@ -6,12 +6,12 @@ use std::fs;
 use std::io;
 use std::path::Path;
 
-pub struct CreateTable {
-    args: Vec<String>,
+pub struct CreateTable<'a> {
+    args: &'a [String],
 }
 
-impl CreateTable {
-    pub fn new(args: Vec<String>) -> Self {
+impl<'a> CreateTable<'a> {
+    pub fn new(args: &'a [String]) -> Self {
         Self { args: args }
     }
 
@@ -73,7 +73,7 @@ impl CreateTable {
     }
 }
 
-impl Base for CreateTable {
+impl<'a> Base for CreateTable<'a> {
     const OP_NAME: &'static str = "create_table";
 
     fn validate(&self) -> std::io::Result<()> {
@@ -127,11 +127,11 @@ impl Base for CreateTable {
 
         let impl_opt: &str = opts.get("--impl").map(|o| o.as_str()).unwrap_or("b");
         let idx_opt: &str = opts.get("--idx").map(|o| o.as_str()).unwrap_or("");
-        let field_opt: &String = opts.get("--fields").unwrap();
-        let fields: Vec<&str> = field_opt.split(" ").collect();
+        let field_opt: &str = opts.get("--fields").unwrap();
+        let fields: Vec<String> = field_opt.split(" ").map(|s| String::from(s)).collect();
 
         let mut table_info = TableInfo::new(&current_db, &(self.args[1]));
-        table_info.initialize_file(impl_opt, idx_opt, fields)?;
+        table_info.initialize_file(impl_opt, idx_opt, &fields)?;
 
         let mut sequence_file = Sequence::new(&current_db, &(self.args[1]));
         sequence_file.initialize_file()?;
@@ -139,7 +139,7 @@ impl Base for CreateTable {
         Ok(())
     }
 
-    fn args(&self) -> &Vec<String> {
+    fn args(&self) -> &[String] {
         return &(self.args);
     }
 }

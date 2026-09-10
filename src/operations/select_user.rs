@@ -2,17 +2,17 @@ use super::Base;
 use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, USERS_FILE};
 use std::io;
 
-pub struct SelectUser {
-    args: Vec<String>,
+pub struct SelectUser<'a> {
+    args: &'a [String],
 }
 
-impl SelectUser {
-    pub fn new(args: Vec<String>) -> Self {
+impl<'a> SelectUser<'a> {
+    pub fn new(args: &'a [String]) -> Self {
         Self { args: args }
     }
 }
 
-impl Base for SelectUser {
+impl<'a> Base for SelectUser<'a> {
     const OP_NAME: &'static str = "select_user";
 
     fn validate(&self) -> std::io::Result<()> {
@@ -55,7 +55,7 @@ impl Base for SelectUser {
         return Ok(());
     }
 
-    fn args(&self) -> &Vec<String> {
+    fn args(&self) -> &[String] {
         return &(self.args);
     }
 }

@@ -14,11 +14,11 @@ pub mod file_ops;
 pub mod initializer;
 pub mod operations;
 
-fn operate(args: Vec<String>) -> std::io::Result<()> {
-    let op: &str = &args[0];
-
+fn operate(args: &[String]) -> std::io::Result<()> {
+    let op = args[0].as_str();
+    let new_args: Vec<String> = args[..].to_vec();
     match op {
-        CreateDB::OP_NAME => CreateDB::new(args).op(),
+        CreateDB::OP_NAME => CreateDB::new(&new_args).op(),
         CreateUser::OP_NAME => CreateUser::new(args).op(),
         ConnectDB::OP_NAME => ConnectDB::new(args).op(),
         CreateTable::OP_NAME => CreateTable::new(args).op(),
@@ -65,17 +65,17 @@ fn start() -> std::io::Result<()> {
                 let mut payload = vec![0u8; size];
                 stream.read_exact(&mut payload)?;
 
-                let str_arg: String = String::from_utf8(payload).unwrap();
+                let str_arg = String::from_utf8(payload).unwrap();
                 args.push(str_arg);
             }
-            operate(args)?;
+            operate(&args)?;
             Ok(())
         });
     }
     Ok(())
 }
 
-fn process_args(args: Vec<String>) -> std::io::Result<()> {
+fn process_args(args: &[String]) -> std::io::Result<()> {
     let mut stream = TcpStream::connect("127.0.0.1:6380")?;
 
     for arg in args {
@@ -94,5 +94,5 @@ fn main() {
         start().unwrap();
     }
 
-    process_args(args[1..].to_vec()).unwrap();
+    process_args(&args[1..]).unwrap();
 }
