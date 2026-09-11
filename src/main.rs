@@ -1,4 +1,4 @@
-// use crate::ds;
+use crate::data_structs::RBNode;
 use crate::initializer::initialize;
 use crate::operations::{Base, ConnectDB, CreateDB, CreateTable, CreateUser, Insert, SelectUser};
 
@@ -8,8 +8,8 @@ use std::net::{TcpListener, TcpStream};
 use std::process;
 use std::thread;
 
+pub mod data_structs;
 pub mod db_constants;
-// pub mod ds;
 pub mod file_ops;
 pub mod initializer;
 pub mod operations;
