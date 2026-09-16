@@ -1,11 +1,13 @@
-use crate::data_structs::RBNode;
+use crate::data_structs::{RBNode, RBTree};
 use crate::initializer::initialize;
 use crate::operations::{Base, ConnectDB, CreateDB, CreateTable, CreateUser, Insert, SelectUser};
 
+use std::cell::RefCell;
 use std::env;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::process;
+use std::rc::Rc;
 use std::thread;
 
 pub mod data_structs;

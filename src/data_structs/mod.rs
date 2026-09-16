@@ -1,3 +1,3 @@
 mod rbt;
 
-pub use rbt::RBNode;
+pub use rbt::{RBNode, RBTree};
