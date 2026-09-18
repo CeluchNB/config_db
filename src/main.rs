@@ -1,4 +1,4 @@
-use crate::data_structs::{RBNode, RBTree};
+use crate::data_structs::{Color, RBNode, RBTree};
 use crate::initializer::initialize;
 use crate::operations::{Base, ConnectDB, CreateDB, CreateTable, CreateUser, Insert, SelectUser};
 
