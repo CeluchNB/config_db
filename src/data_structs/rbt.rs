@@ -1,20 +1,13 @@
-// use std::borrow::Borrow;
+// use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
 use std::fmt::Display;
 use std::io;
 use std::rc::{Rc, Weak};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Color {
     Red,
     Black,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum RebalanceOp {
-    Noop,
-    Recolor,
-    Rotate,
 }
 
 pub struct RBNode<K: PartialOrd + Display, V> {
@@ -37,6 +30,27 @@ impl<K: PartialOrd + Display, V> RBNode<K, V> {
             color: color,
         }
     }
+
+    pub fn print_me(&self) {
+        let mut str_builder = String::new();
+        str_builder
+            .push_str(format!("Node -> Key: {}, Color: {:?}", self.key, self.color).as_str());
+        if let Some(p) = &self.parent {
+            str_builder
+                .push_str(format!(", Parent Key: {}", p.upgrade().unwrap().borrow().key).as_str());
+        } else {
+            str_builder.push_str(", IS ROOT");
+        }
+
+        if let Some(l) = &self.left {
+            str_builder.push_str(format!(", Left Key: {}", l.borrow().key).as_str());
+        }
+
+        if let Some(r) = &self.right {
+            str_builder.push_str(format!(", Right Key: {}", r.borrow().key).as_str());
+        }
+        println!("{}", str_builder);
+    }
 }
 pub struct RBTree<K: PartialOrd + Display, V> {
     pub root: Rc<RefCell<RBNode<K, V>>>,
@@ -48,28 +62,10 @@ impl<K: PartialOrd + Display, V> RBTree<K, V> {
     }
 
     pub fn insert(&self, key: K, val: V) -> Result<(), io::Error> {
+        println!("Inserting {}", key);
         let node = Self::initial_insert(&self.root, key, val);
 
-        // if parent is black, we can return
-        // not safely unwrapping b/c tree is initialized with root
-        let parent: Rc<RefCell<RBNode<K, V>>> =
-            node.borrow().parent.as_ref().unwrap().upgrade().unwrap();
-        if parent.borrow().color == Color::Black {
-            return Ok(());
-        }
-
-        let rebalance_op = Self::get_rebalance_op(&parent);
-        if rebalance_op == RebalanceOp::Recolor {
-            // recursively recolor up the tree and be done
-            Self::recolor(&node);
-            return Ok(());
-        }
-
-        if rebalance_op == RebalanceOp::Rotate {
-            Self::rotate(&node);
-        }
-        // uncle is black, balance by rotation
-        Ok(())
+        Self::rebalance(&node)
     }
 
     fn initial_insert(
@@ -124,32 +120,25 @@ impl<K: PartialOrd + Display, V> RBTree<K, V> {
         }
     }
 
-    fn get_rebalance_op(parent: &Rc<RefCell<RBNode<K, V>>>) -> RebalanceOp {
-        let grand_parent;
-        match &parent.as_ref().borrow().parent {
-            Some(gp) => grand_parent = gp.clone(),
-            None => return RebalanceOp::Noop,
-        }
-
-        let uncle;
-        if parent.borrow().key > grand_parent.upgrade().unwrap().borrow().key {
-            match &grand_parent.upgrade().unwrap().borrow().left {
-                Some(u) => uncle = Rc::clone(u),
-                // uncle is black if it is None
-                None => return RebalanceOp::Rotate,
+    fn rebalance(node: &Rc<RefCell<RBNode<K, V>>>) -> Result<(), io::Error> {
+        let mut current_node = Rc::clone(node);
+        loop {
+            let parent = current_node.borrow().parent.clone();
+            match parent {
+                Some(p) => {
+                    if p.upgrade().unwrap().borrow().color == Color::Black {
+                        return Ok(());
+                    }
+                }
+                None => {
+                    // set root to black
+                    current_node.borrow_mut().color = Color::Black;
+                    return Ok(());
+                }
             }
-        } else {
-            match &grand_parent.upgrade().unwrap().borrow().right {
-                Some(u) => uncle = Rc::clone(u),
-                // uncle is black if it is None
-                None => return RebalanceOp::Rotate,
-            }
-        }
 
-        if uncle.borrow().color == Color::Red {
-            return RebalanceOp::Recolor;
-        } else {
-            return RebalanceOp::Rotate;
+            current_node = Self::recolor(&current_node);
+            Self::rotate(&current_node);
         }
     }
 
@@ -162,7 +151,11 @@ impl<K: PartialOrd + Display, V> RBTree<K, V> {
                 return node;
             }
 
-            let grand_parent = parent.borrow().parent.as_ref().unwrap().upgrade().unwrap();
+            let grand_parent;
+            match parent.borrow().parent.as_ref() {
+                Some(gp) => grand_parent = gp.upgrade().unwrap(),
+                None => return node,
+            }
             let uncle;
             // if the parent's key is greater than the grandparent's key, the parent is the right
             // node, so the uncle is the left node
@@ -204,11 +197,44 @@ impl<K: PartialOrd + Display, V> RBTree<K, V> {
     }
 
     fn rotate(node: &Rc<RefCell<RBNode<K, V>>>) {
-        let parent = node.borrow().parent.as_ref().unwrap().upgrade().unwrap();
-        let grand_parent = parent.borrow().parent.as_ref().unwrap().upgrade().unwrap();
-        if grand_parent.borrow().key > node.borrow().key {
+        let right_rotate: bool;
+        {
+            let parent;
+            match node.borrow().parent.as_ref() {
+                Some(p) => parent = p.upgrade().unwrap(),
+                None => return,
+            }
+            let grand_parent;
+            match parent.borrow().parent.as_ref() {
+                Some(gp) => grand_parent = gp.upgrade().unwrap(),
+                None => return,
+            }
+            let uncle_color = {
+                if parent.borrow().key < grand_parent.borrow().key {
+                    match grand_parent.borrow().right.as_ref() {
+                        Some(u) => u.borrow().color,
+                        None => Color::Black,
+                    }
+                } else {
+                    match grand_parent.borrow().left.as_ref() {
+                        Some(u) => u.borrow().color,
+                        None => Color::Black,
+                    }
+                }
+            };
+            println!("Uncle color: {:?}", uncle_color);
+
+            if uncle_color == Color::Red {
+                return;
+            }
+
+            right_rotate = grand_parent.borrow().key > node.borrow().key;
+        }
+        if right_rotate {
+            println!("Rotating right");
             Self::right_rotate(node);
         } else {
+            println!("Rotating left");
             Self::left_rotate(node);
         }
     }
@@ -245,7 +271,7 @@ impl<K: PartialOrd + Display, V> RBTree<K, V> {
         }
         final_parent.borrow_mut().right = Some(Rc::clone(&grand_parent));
         grand_parent.borrow_mut().parent = Some(Rc::downgrade(&final_parent));
-        grand_parent.borrow_mut().left = None;
+        grand_parent.borrow_mut().left = None; // TODO: Preserve subtree?
 
         grand_parent.borrow_mut().color = Color::Red;
         final_parent.borrow_mut().color = Color::Black;
@@ -270,7 +296,11 @@ impl<K: PartialOrd + Display, V> RBTree<K, V> {
 
         match great_grand_parent {
             Some(ggp) => {
-                ggp.borrow_mut().right = Some(Rc::clone(&final_parent));
+                if ggp.borrow().key < final_parent.borrow().key {
+                    ggp.borrow_mut().right = Some(Rc::clone(&final_parent));
+                } else {
+                    ggp.borrow_mut().left = Some(Rc::clone(&final_parent));
+                }
                 final_parent.borrow_mut().parent = Some(Rc::downgrade(&ggp));
             }
             None => {
@@ -280,6 +310,7 @@ impl<K: PartialOrd + Display, V> RBTree<K, V> {
 
         if let Some(initial_left) = final_parent.borrow().left.as_ref() {
             grand_parent.borrow_mut().right = Some(Rc::clone(initial_left));
+            initial_left.borrow_mut().parent = Some(Rc::downgrade(&grand_parent));
         }
         final_parent.borrow_mut().left = Some(Rc::clone(&grand_parent));
         grand_parent.borrow_mut().parent = Some(Rc::downgrade(&final_parent));
@@ -293,10 +324,12 @@ impl<K: PartialOrd + Display, V> RBTree<K, V> {
         let parent = node.borrow().parent.as_ref().unwrap().upgrade().unwrap();
         let grand_parent = parent.borrow().parent.as_ref().unwrap().upgrade().unwrap();
 
-        grand_parent.borrow_mut().left = Some(Rc::clone(node));
+        grand_parent.borrow_mut().left = Some(Rc::clone(node)); // TODO: START HERE - Can I create a
+        // new clone without causing a
+        // memory leak?
         parent.borrow_mut().right = None;
         parent.borrow_mut().parent = Some(Rc::downgrade(&node));
-        node.borrow_mut().left = Some(parent);
+        node.borrow_mut().left = Some(Rc::clone(&parent));
         node.borrow_mut().parent = Some(Rc::downgrade(&grand_parent));
     }
 
