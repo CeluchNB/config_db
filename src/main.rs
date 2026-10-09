@@ -90,27 +90,18 @@ fn process_args(args: &[String]) -> std::io::Result<()> {
 }
 
 fn main() {
-    let root = Rc::new(RefCell::new(RBNode::new(5, "test", Color::Black, None)));
+    let root = Rc::new(RefCell::new(RBNode::new(10, "test", Color::Black, None)));
     let tree = RBTree::new(root);
 
-    tree.insert(1, "left").unwrap();
-    tree.insert(7, "right").unwrap();
-    tree.insert(3, "leftright").unwrap();
-    // tree.insert(0, "leftleft").unwrap();
-    tree.insert(4, "leftrightright").unwrap();
+    let nodes = vec![0, 20, 1, 5, 6, 7, 3];
+    for node in &nodes {
+        tree.insert(*node, "data").unwrap();
+    }
 
-    // let zero = tree.find(0);
-    let one = tree.find(1);
-    let three = tree.find(3);
-    let five = tree.find(5);
-    let four = tree.find(4);
-    let seven = tree.find(7);
-
-    one.unwrap().borrow().print_me();
-    three.unwrap().borrow().print_me();
-    four.unwrap().borrow().print_me();
-    five.unwrap().borrow().print_me();
-    seven.unwrap().borrow().print_me();
+    for node in &nodes {
+        let n = tree.find(*node);
+        n.unwrap().borrow().print_me();
+    }
 
     /* let args: Vec<String> = env::args().collect();
     if args.len() == 2 && &args[1] == "start" {
