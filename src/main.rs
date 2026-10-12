@@ -91,13 +91,17 @@ fn process_args(args: &[String]) -> std::io::Result<()> {
 
 fn main() {
     let root = Rc::new(RefCell::new(RBNode::new(10, "test", Color::Black, None)));
-    let tree = RBTree::new(root);
+    let mut tree = RBTree::new(root);
 
-    let nodes = vec![0, 20, 1, 5, 6, 7, 3];
+    let nodes = vec![
+        0, 20, 1, 5, 6, 7, 3, 11, 19, 4, 27, 29, 30, 31, 32, 33, 28, 35,
+    ];
     for node in &nodes {
         tree.insert(*node, "data").unwrap();
     }
 
+    let initial_root = tree.find(10);
+    initial_root.unwrap().borrow().print_me();
     for node in &nodes {
         let n = tree.find(*node);
         n.unwrap().borrow().print_me();
