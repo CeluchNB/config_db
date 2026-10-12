@@ -1,4 +1,3 @@
-// use std::borrow::{Borrow, BorrowMut};
 use std::cell::RefCell;
 use std::fmt::Display;
 use std::io;
@@ -53,6 +52,7 @@ impl<K: PartialOrd + Display, V> RBNode<K, V> {
         if let Some(r) = &self.right {
             str_builder.push_str(format!(", Right Key: {}", r.borrow().key).as_str());
         }
+        println!("{}", str_builder);
     }
 }
 pub struct RBTree<K: PartialOrd + Display, V> {
@@ -140,7 +140,16 @@ impl<K: PartialOrd + Display, V> RBTree<K, V> {
             }
 
             current_node = Self::recolor(&current_node);
-            self.rotate(&current_node);
+            let parent_is_red = current_node
+                .borrow()
+                .parent
+                .as_ref()
+                .and_then(|p| p.upgrade())
+                .map_or(false, |p| p.borrow().color == Color::Red);
+            if parent_is_red {
+                self.rotate(&current_node);
+                return Ok(());
+            }
         }
     }
 
