@@ -1,10 +1,18 @@
 use super::Base;
+use crate::data_structs::{Color, RBNode, RBTree};
 use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE};
 use crate::file_ops::{Sequence, TableInfo};
+use crate::in_mem_data::DATA;
+use std::cell::RefCell;
 use std::fs;
 use std::io;
 use std::path::Path;
+use std::rc::Rc;
 
+/**
+ * Insert command
+ * insert table_name field1=data1 field2=data2
+ */
 pub struct Insert<'a> {
     args: &'a [String],
 }
@@ -98,7 +106,31 @@ impl<'a> Base for Insert<'a> {
             })
             .collect();
 
-        let bytes: Vec<Vec<u8>> = values
+        println!("Trying for data");
+        DATA.with(|map_cell| {
+            println!("In data");
+            let mut map = map_cell.borrow_mut();
+
+            if map.contains_key(&table_name) {
+                println!("Contains table");
+                let tree_opt = map.get_mut(&table_name);
+                let tree = tree_opt.unwrap();
+                tree.insert(id, field_args_vec.join(",")).unwrap();
+            } else {
+                println!("Does not contain table");
+                map.insert(
+                    table_name,
+                    RBTree::new(Rc::new(RefCell::new(RBNode::new(
+                        id,
+                        field_args_vec.join(","),
+                        Color::Black,
+                        None,
+                    )))),
+                );
+            }
+        });
+
+        /* let bytes: Vec<Vec<u8>> = values
             .iter()
             .map(|s| {
                 let bytes: &[u8] = s.as_bytes();
@@ -120,7 +152,7 @@ impl<'a> Base for Insert<'a> {
         // write to correct location in file
         for byte_list in bytes {
             println!("{:?}", byte_list);
-        }
+        } */
         // pad bytes
         // generate string row
         //
