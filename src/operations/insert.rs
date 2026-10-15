@@ -43,12 +43,44 @@ impl<'a> Insert<'a> {
             "User is not connected to DB",
         ))
     }
+
+    fn insert_memory(
+        &self,
+        id: u32,
+        table_name: &String,
+        field_args_vec: &Vec<String>,
+    ) -> std::io::Result<()> {
+        DATA.with(|map_cell| {
+            println!("In data");
+            let mut map = map_cell.borrow_mut();
+
+            if map.contains_key(table_name) {
+                println!("Contains table");
+                let tree_opt = map.get_mut(table_name);
+                let tree = tree_opt.unwrap();
+                tree.insert(id, field_args_vec.join(",")).unwrap();
+            } else {
+                println!("Does not contain table");
+                map.insert(
+                    String::from(table_name),
+                    RBTree::new(Rc::new(RefCell::new(RBNode::new(
+                        id,
+                        field_args_vec.join(","),
+                        Color::Black,
+                        None,
+                    )))),
+                );
+            }
+        });
+        Ok(())
+    }
 }
 
 impl<'a> Base for Insert<'a> {
     const OP_NAME: &'static str = "insert";
 
     fn validate(&self) -> std::io::Result<()> {
+        println!("In validate");
         let current_user = self.current_user()?;
         let current_db = self.current_db(&current_user)?;
         let table_name: String = self.args[1].clone();
@@ -86,6 +118,7 @@ impl<'a> Base for Insert<'a> {
     }
 
     fn perform(&self) -> std::io::Result<()> {
+        println!("In perform");
         let current_user = self.current_user()?;
         let current_db = self.current_db(&current_user)?;
         let table_name = self.args[1].clone();
@@ -106,29 +139,7 @@ impl<'a> Base for Insert<'a> {
             })
             .collect();
 
-        println!("Trying for data");
-        DATA.with(|map_cell| {
-            println!("In data");
-            let mut map = map_cell.borrow_mut();
-
-            if map.contains_key(&table_name) {
-                println!("Contains table");
-                let tree_opt = map.get_mut(&table_name);
-                let tree = tree_opt.unwrap();
-                tree.insert(id, field_args_vec.join(",")).unwrap();
-            } else {
-                println!("Does not contain table");
-                map.insert(
-                    table_name,
-                    RBTree::new(Rc::new(RefCell::new(RBNode::new(
-                        id,
-                        field_args_vec.join(","),
-                        Color::Black,
-                        None,
-                    )))),
-                );
-            }
-        });
+        self.insert_memory(id, &table_name, &field_args_vec)?;
 
         /* let bytes: Vec<Vec<u8>> = values
             .iter()

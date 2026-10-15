@@ -1,6 +1,8 @@
 // use crate::data_structs::{Color, RBNode, RBTree};
 use crate::initializer::initialize;
-use crate::operations::{Base, ConnectDB, CreateDB, CreateTable, CreateUser, Insert, SelectUser};
+use crate::operations::{
+    Base, ConnectDB, CreateDB, CreateTable, CreateUser, Get, Insert, SelectUser,
+};
 
 // use std::cell::RefCell;
 use std::env;
@@ -27,6 +29,7 @@ fn operate(args: &[String]) -> std::io::Result<()> {
         ConnectDB::OP_NAME => ConnectDB::new(args).op(),
         CreateTable::OP_NAME => CreateTable::new(args).op(),
         SelectUser::OP_NAME => SelectUser::new(args).op(),
+        Get::OP_NAME => Get::new(args).op(),
         Insert::OP_NAME => Insert::new(args).op(),
         _ => {
             return Err(io::Error::new(
