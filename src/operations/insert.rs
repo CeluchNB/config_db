@@ -1,5 +1,5 @@
 use super::Base;
-use crate::data_structs::{Color, RBNode, RBTree};
+use crate::data_structs::{Color, RBNode, RBTree, SSTable};
 use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE};
 use crate::file_ops::{Sequence, TableInfo};
 use crate::in_mem_data::DATA;
@@ -74,6 +74,10 @@ impl<'a> Insert<'a> {
         });
         Ok(())
     }
+
+    fn memtable_to_disk() -> std::io::Result<()> {
+        Ok(())
+    }
 }
 
 impl<'a> Base for Insert<'a> {
@@ -123,7 +127,6 @@ impl<'a> Base for Insert<'a> {
         let current_db = self.current_db(&current_user)?;
         let table_name = self.args[1].clone();
 
-        let table_info = TableInfo::new(&current_db, &table_name);
         let mut sequence = Sequence::new(&current_db, &table_name);
         let id = sequence.increment_sequence()?;
 
@@ -131,15 +134,16 @@ impl<'a> Base for Insert<'a> {
         let mut field_args_vec: Vec<String> = Vec::from(field_args);
         field_args_vec.sort();
 
-        let values: Vec<String> = field_args_vec
-            .iter()
-            .map(|s| {
-                let split_str: Vec<&str> = s.split("=").collect();
-                String::from(split_str[1])
-            })
-            .collect();
-
         self.insert_memory(id, &table_name, &field_args_vec)?;
+
+        DATA.with(|map_cell| -> std::io::Result<()> {
+            let map = map_cell.borrow_mut();
+
+            let tree = map.get(&table_name).unwrap();
+            let table = SSTable::<u32, String>::new(&current_db, &table_name, "id", 1, 1)?;
+            table.write_tree(tree)?;
+            Ok(())
+        })?;
 
         /* let bytes: Vec<Vec<u8>> = values
             .iter()

@@ -9,7 +9,7 @@ pub enum Color {
     Black,
 }
 
-pub struct RBNode<K: PartialOrd + Display, V> {
+pub struct RBNode<K: PartialOrd + Display + Clone, V: Clone + Display> {
     pub left: Option<Rc<RefCell<RBNode<K, V>>>>,
     pub right: Option<Rc<RefCell<RBNode<K, V>>>>,
     pub parent: Option<Weak<RefCell<RBNode<K, V>>>>,
@@ -18,7 +18,7 @@ pub struct RBNode<K: PartialOrd + Display, V> {
     pub color: Color,
 }
 
-impl<K: PartialOrd + Display, V> RBNode<K, V> {
+impl<K: PartialOrd + Display + Clone, V: Clone + Display> RBNode<K, V> {
     pub fn new(key: K, val: V, color: Color, parent: Option<Weak<RefCell<RBNode<K, V>>>>) -> Self {
         Self {
             left: None,
@@ -55,11 +55,11 @@ impl<K: PartialOrd + Display, V> RBNode<K, V> {
         println!("{}", str_builder);
     }
 }
-pub struct RBTree<K: PartialOrd + Display, V> {
+pub struct RBTree<K: PartialOrd + Display + Clone, V: Clone + Display> {
     pub root: Rc<RefCell<RBNode<K, V>>>,
 }
 
-impl<K: PartialOrd + Display, V> RBTree<K, V> {
+impl<K: PartialOrd + Display + Clone, V: Clone + Display> RBTree<K, V> {
     pub fn new(root: Rc<RefCell<RBNode<K, V>>>) -> Self {
         Self { root: root }
     }
