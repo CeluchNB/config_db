@@ -1,5 +1,5 @@
+use crate::data_structs::{Key, Value};
 use std::cell::RefCell;
-use std::fmt::Display;
 use std::io;
 use std::rc::{Rc, Weak};
 
@@ -9,7 +9,7 @@ pub enum Color {
     Black,
 }
 
-pub struct RBNode<K: PartialOrd + Display + Clone, V: Clone + Display> {
+pub struct RBNode<K: Key, V: Value> {
     pub left: Option<Rc<RefCell<RBNode<K, V>>>>,
     pub right: Option<Rc<RefCell<RBNode<K, V>>>>,
     pub parent: Option<Weak<RefCell<RBNode<K, V>>>>,
@@ -18,7 +18,7 @@ pub struct RBNode<K: PartialOrd + Display + Clone, V: Clone + Display> {
     pub color: Color,
 }
 
-impl<K: PartialOrd + Display + Clone, V: Clone + Display> RBNode<K, V> {
+impl<K: Key, V: Value> RBNode<K, V> {
     pub fn new(key: K, val: V, color: Color, parent: Option<Weak<RefCell<RBNode<K, V>>>>) -> Self {
         Self {
             left: None,
@@ -55,11 +55,11 @@ impl<K: PartialOrd + Display + Clone, V: Clone + Display> RBNode<K, V> {
         println!("{}", str_builder);
     }
 }
-pub struct RBTree<K: PartialOrd + Display + Clone, V: Clone + Display> {
+pub struct RBTree<K: Key, V: Value> {
     pub root: Rc<RefCell<RBNode<K, V>>>,
 }
 
-impl<K: PartialOrd + Display + Clone, V: Clone + Display> RBTree<K, V> {
+impl<K: Key, V: Value> RBTree<K, V> {
     pub fn new(root: Rc<RefCell<RBNode<K, V>>>) -> Self {
         Self { root: root }
     }

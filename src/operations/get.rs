@@ -16,7 +16,7 @@ impl<'a> Get<'a> {
             let tree = map.get(table_name).unwrap();
             let id_arg = &self.args[2];
 
-            let id: u32 = id_arg.parse().unwrap();
+            let id: String = String::from(id_arg); // .parse().unwrap();
             match tree.find(id) {
                 Some(result) => {
                     println!("RESULT {}", result.borrow().val);

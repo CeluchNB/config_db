@@ -1,31 +1,30 @@
 use crate::data_structs::rbt::{RBNode, RBTree};
+use crate::data_structs::types::{Key, Value};
 use crate::db_constants::{DATA_PATH, DIR_PATH, TABLE_PATH};
 use std::cell::RefCell;
-use std::fmt::Display;
-use std::fs::{OpenOptions, create_dir_all};
+use std::fs::OpenOptions;
 use std::io::{self, Write};
 use std::marker::PhantomData;
-use std::path::Path;
 use std::rc::Rc;
 
-pub struct SSTable<K: Clone, V: Clone + Display> {
+pub struct SSTable<K: Key, V: Value> {
     path: String,
     phantom_key: PhantomData<K>,
     phantom_val: PhantomData<V>,
 }
 
-struct SSTableItem<K: PartialOrd + Display + Clone, V: Clone + Display> {
+struct SSTableItem<K: Key, V: Value> {
     key: K,
     val: V,
 }
 
-impl<K: PartialOrd + Display + Clone, V: Clone + Display> SSTableItem<K, V> {
+impl<K: Key, V: Value> SSTableItem<K, V> {
     fn new(key: K, val: V) -> Self {
         Self { key, val }
     }
 }
 
-impl<K: PartialOrd + Display + Clone, V: Clone + Display> SSTable<K, V> {
+impl<K: Key, V: Value> SSTable<K, V> {
     pub fn new(
         db_name: &str,
         table_name: &str,
@@ -58,8 +57,12 @@ impl<K: PartialOrd + Display + Clone, V: Clone + Display> SSTable<K, V> {
         SSTable::get_tree_items(&mut queue, &Some(Rc::clone(&tree.root)));
         for item in queue {
             println!("WRITING {} {}", item.key, item.val);
-            file.write_all(format!("{} {}", item.key, item.val).as_bytes())?;
+            file.write_all(&item.key.len().to_le_bytes())?;
+            file.write_all(&item.key.into_bytes())?;
+            file.write_all(&item.val.len().to_le_bytes())?;
+            file.write_all(&item.val.into_bytes())?;
         }
+        file.flush()?;
         Ok(())
     }
 

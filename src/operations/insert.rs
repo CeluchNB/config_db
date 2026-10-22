@@ -46,8 +46,8 @@ impl<'a> Insert<'a> {
 
     fn insert_memory(
         &self,
-        id: u32,
-        table_name: &String,
+        id: &str,
+        table_name: &str,
         field_args_vec: &Vec<String>,
     ) -> std::io::Result<()> {
         DATA.with(|map_cell| {
@@ -58,13 +58,14 @@ impl<'a> Insert<'a> {
                 println!("Contains table");
                 let tree_opt = map.get_mut(table_name);
                 let tree = tree_opt.unwrap();
-                tree.insert(id, field_args_vec.join(",")).unwrap();
+                tree.insert(String::from(id), field_args_vec.join(","))
+                    .unwrap();
             } else {
                 println!("Does not contain table");
                 map.insert(
                     String::from(table_name),
                     RBTree::new(Rc::new(RefCell::new(RBNode::new(
-                        id,
+                        String::from(id),
                         field_args_vec.join(","),
                         Color::Black,
                         None,
@@ -134,13 +135,13 @@ impl<'a> Base for Insert<'a> {
         let mut field_args_vec: Vec<String> = Vec::from(field_args);
         field_args_vec.sort();
 
-        self.insert_memory(id, &table_name, &field_args_vec)?;
+        self.insert_memory(id.to_string().as_str(), &table_name, &field_args_vec)?;
 
         DATA.with(|map_cell| -> std::io::Result<()> {
             let map = map_cell.borrow_mut();
 
             let tree = map.get(&table_name).unwrap();
-            let table = SSTable::<u32, String>::new(&current_db, &table_name, "id", 1, 1)?;
+            let table = SSTable::<String, String>::new(&current_db, &table_name, "id", 1, 1)?;
             table.write_tree(tree)?;
             Ok(())
         })?;
