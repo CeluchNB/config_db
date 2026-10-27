@@ -57,16 +57,21 @@ impl<K: Key, V: Value> RBNode<K, V> {
 }
 pub struct RBTree<K: Key, V: Value> {
     pub root: Rc<RefCell<RBNode<K, V>>>,
+    pub size: u16,
 }
 
 impl<K: Key, V: Value> RBTree<K, V> {
     pub fn new(root: Rc<RefCell<RBNode<K, V>>>) -> Self {
-        Self { root: root }
+        Self {
+            root: root,
+            size: 0,
+        }
     }
 
     pub fn insert(&mut self, key: K, val: V) -> Result<(), io::Error> {
         let node = Self::initial_insert(&self.root, key, val);
 
+        self.size += 1;
         self.rebalance(&node)
     }
 

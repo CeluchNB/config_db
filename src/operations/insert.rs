@@ -48,22 +48,24 @@ impl<'a> Insert<'a> {
         &self,
         id: &str,
         table_name: &str,
+        index: &str,
         field_args_vec: &Vec<String>,
     ) -> std::io::Result<()> {
         DATA.with(|map_cell| {
             println!("In data");
             let mut map = map_cell.borrow_mut();
 
-            if map.contains_key(table_name) {
-                println!("Contains table");
-                let tree_opt = map.get_mut(table_name);
+            let table_key = format!("{}_{}", table_name, index);
+            if map.contains_key(&table_key) {
+                println!("Contains table {}", &table_key);
+                let tree_opt = map.get_mut(&table_key);
                 let tree = tree_opt.unwrap();
                 tree.insert(String::from(id), field_args_vec.join(","))
                     .unwrap();
             } else {
-                println!("Does not contain table");
+                println!("Does not contain table {}", &table_key);
                 map.insert(
-                    String::from(table_name),
+                    String::from(&table_key),
                     RBTree::new(Rc::new(RefCell::new(RBNode::new(
                         String::from(id),
                         field_args_vec.join(","),
@@ -76,7 +78,25 @@ impl<'a> Insert<'a> {
         Ok(())
     }
 
-    fn memtable_to_disk() -> std::io::Result<()> {
+    fn memtable_to_disk(
+        &self,
+        current_db: &str,
+        table_name: &str,
+        index: &str,
+    ) -> std::io::Result<()> {
+        DATA.with(|map_cell| -> std::io::Result<()> {
+            let map = map_cell.borrow_mut();
+            let table_key = format!("{}_{}", table_name, index);
+
+            println!("Looking for table {}", &table_key);
+            let tree = map.get(&String::from(&table_key)).unwrap();
+            if tree.size >= 5 {
+                let table = SSTable::<String, String>::new(&current_db, &table_name, index, 1, 1)?;
+                table.write_tree(tree)?;
+            }
+            Ok(())
+        })?;
+
         Ok(())
     }
 }
@@ -135,43 +155,20 @@ impl<'a> Base for Insert<'a> {
         let mut field_args_vec: Vec<String> = Vec::from(field_args);
         field_args_vec.sort();
 
-        self.insert_memory(id.to_string().as_str(), &table_name, &field_args_vec)?;
+        let table_info = TableInfo::new(&current_db, &table_name);
+        let index = table_info.read_index()?;
+        let index_field_arg = field_args_vec.iter().find(|field| field.contains(&index));
 
-        DATA.with(|map_cell| -> std::io::Result<()> {
-            let map = map_cell.borrow_mut();
+        let index_field = match index_field_arg {
+            Some(arg) => arg.split("").last().unwrap_or(""),
+            None => "",
+        };
 
-            let tree = map.get(&table_name).unwrap();
-            let table = SSTable::<String, String>::new(&current_db, &table_name, "id", 1, 1)?;
-            table.write_tree(tree)?;
-            Ok(())
-        })?;
+        self.insert_memory(id.to_string().as_str(), &table_name, "id", &field_args_vec)?;
+        self.insert_memory(index_field, &table_name, &index, &field_args_vec)?;
+        self.memtable_to_disk(&current_db, &table_name, "id")?;
+        self.memtable_to_disk(&current_db, &table_name, &index)?;
 
-        /* let bytes: Vec<Vec<u8>> = values
-            .iter()
-            .map(|s| {
-                let bytes: &[u8] = s.as_bytes();
-                let padding = 50 - bytes.len();
-                let mut padded = vec![b'0'; padding];
-                padded.extend_from_slice(bytes);
-                Vec::from(padded)
-            })
-            .collect();
-        let id_bytes = id.to_be_bytes();
-
-        let table_dir = format!(
-            "{}{}/{}{}/{}",
-            DIR_PATH, DATA_PATH, current_db, "/tables", table_name
-        );
-        // get correct file
-        let file_path = format!("{}/1", table_dir);
-
-        // write to correct location in file
-        for byte_list in bytes {
-            println!("{:?}", byte_list);
-        } */
-        // pad bytes
-        // generate string row
-        //
         // LSM -> insert into memtable (might need more like a storetable)
         //  merge into layer 1
         //  recurse down

@@ -2,8 +2,8 @@ use crate::data_structs::rbt::{RBNode, RBTree};
 use crate::data_structs::types::{Key, Value};
 use crate::db_constants::{DATA_PATH, DIR_PATH, TABLE_PATH};
 use std::cell::RefCell;
-use std::fs::OpenOptions;
-use std::io::{self, Write};
+use std::fs::{File, OpenOptions};
+use std::io::{self, BufWriter, Write};
 use std::marker::PhantomData;
 use std::rc::Rc;
 
@@ -47,22 +47,24 @@ impl<K: Key, V: Value> SSTable<K, V> {
 
     pub fn write_tree(&self, tree: &RBTree<K, V>) -> io::Result<()> {
         println!("SSTABLE WRITE TREE");
-        let mut file = OpenOptions::new()
-            .append(true)
-            .create(true)
-            .open(&self.path)?;
+        let file = File::create(&self.path)?;
+        let mut writer = BufWriter::new(file);
 
         let mut queue: Vec<SSTableItem<K, V>> = vec![];
         println!("SSTABLE BEFORE GET ITEMS");
         SSTable::get_tree_items(&mut queue, &Some(Rc::clone(&tree.root)));
         for item in queue {
-            println!("WRITING {} {}", item.key, item.val);
-            file.write_all(&item.key.len().to_le_bytes())?;
-            file.write_all(&item.key.into_bytes())?;
-            file.write_all(&item.val.len().to_le_bytes())?;
-            file.write_all(&item.val.into_bytes())?;
+            let key_len = item.key.len().to_le_bytes();
+            let key = item.key.into_bytes();
+            let val_len = item.val.len().to_le_bytes();
+            let val = item.val.into_bytes();
+
+            writer.write_all(&key_len)?;
+            writer.write_all(&key)?;
+            writer.write_all(&val_len)?;
+            writer.write_all(&val)?;
         }
-        file.flush()?;
+        writer.flush()?;
         Ok(())
     }
 
