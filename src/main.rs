@@ -22,7 +22,6 @@ pub mod operations;
 fn operate(args: &[String]) -> std::io::Result<()> {
     let op = args[0].as_str();
     let new_args: Vec<String> = args[..].to_vec();
-    println!("Got op {}", op);
     match op {
         CreateDB::OP_NAME => CreateDB::new(&new_args).op(),
         CreateUser::OP_NAME => CreateUser::new(args).op(),
@@ -51,11 +50,9 @@ fn start() -> std::io::Result<()> {
     for stream in listener.incoming() {
         let mut stream = stream?;
 
-        println!("Got stream");
         // thread::spawn(move || {
         let mut args: Vec<String> = vec![];
         loop {
-            println!("In loop");
             let mut size_buf = [0u8; 4];
             match stream.read_exact(&mut size_buf) {
                 Ok(()) => {}
@@ -64,7 +61,6 @@ fn start() -> std::io::Result<()> {
             }
             let size = u32::from_be_bytes(size_buf) as usize;
 
-            println!("size {}", size);
             if size > 1_000_000 {
                 return Err(io::Error::new(
                     io::ErrorKind::Other,
@@ -77,9 +73,7 @@ fn start() -> std::io::Result<()> {
 
             let str_arg = String::from_utf8(payload).unwrap();
             args.push(str_arg);
-            println!("Pushed arg");
         }
-        println!("Operate");
         operate(&args)?;
         // Ok(())
         // });
@@ -88,11 +82,9 @@ fn start() -> std::io::Result<()> {
 }
 
 fn process_args(args: &[String]) -> std::io::Result<()> {
-    println!("In process args");
     let mut stream = TcpStream::connect("127.0.0.1:6380")?;
 
     for arg in args {
-        println!("Sending arg {}", arg);
         let len = arg.len() as u32;
         stream.write_all(&len.to_be_bytes())?;
         stream.write_all(arg.as_bytes())?;

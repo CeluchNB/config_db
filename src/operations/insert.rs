@@ -52,18 +52,15 @@ impl<'a> Insert<'a> {
         field_args_vec: &Vec<String>,
     ) -> std::io::Result<()> {
         DATA.with(|map_cell| {
-            println!("In data");
             let mut map = map_cell.borrow_mut();
 
             let table_key = format!("{}_{}", table_name, index);
             if map.contains_key(&table_key) {
-                println!("Contains table {}", &table_key);
                 let tree_opt = map.get_mut(&table_key);
                 let tree = tree_opt.unwrap();
                 tree.insert(String::from(id), field_args_vec.join(","))
                     .unwrap();
             } else {
-                println!("Does not contain table {}", &table_key);
                 map.insert(
                     String::from(&table_key),
                     RBTree::new(Rc::new(RefCell::new(RBNode::new(
@@ -90,7 +87,7 @@ impl<'a> Insert<'a> {
 
             println!("Looking for table {}", &table_key);
             let tree = map.get(&String::from(&table_key)).unwrap();
-            if tree.size >= 5 {
+            if tree.size >= 2 {
                 let table = SSTable::<String, String>::new(&current_db, &table_name, index, 1, 1)?;
                 table.write_tree(tree)?;
             }
@@ -160,15 +157,16 @@ impl<'a> Base for Insert<'a> {
         let index_field_arg = field_args_vec.iter().find(|field| field.contains(&index));
 
         let index_field = match index_field_arg {
-            Some(arg) => arg.split("").last().unwrap_or(""),
+            Some(arg) => arg.split("=").last().unwrap_or(""),
             None => "",
         };
 
         self.insert_memory(id.to_string().as_str(), &table_name, "id", &field_args_vec)?;
-        self.insert_memory(index_field, &table_name, &index, &field_args_vec)?;
         self.memtable_to_disk(&current_db, &table_name, "id")?;
-        self.memtable_to_disk(&current_db, &table_name, &index)?;
-
+        if !index.is_empty() {
+            self.insert_memory(index_field, &table_name, &index, &field_args_vec)?;
+            self.memtable_to_disk(&current_db, &table_name, &index)?;
+        }
         // LSM -> insert into memtable (might need more like a storetable)
         //  merge into layer 1
         //  recurse down
