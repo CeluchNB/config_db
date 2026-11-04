@@ -88,8 +88,7 @@ impl<'a> Insert<'a> {
             println!("Looking for table {}", &table_key);
             let tree = map.get(&String::from(&table_key)).unwrap();
             if tree.size >= 2 {
-                let table = SSTable::<String, String>::new(&current_db, &table_name, index, 1, 1)?;
-                table.write_tree(tree)?;
+                SSTable::<String, String>::new(&current_db, &table_name, index, 1, 1, &tree)?;
             }
             Ok(())
         })?;
