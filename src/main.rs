@@ -1,15 +1,15 @@
-// use crate::data_structs::{Color, RBNode, RBTree};
+use crate::data_structs::{Color, RBNode, RBTree, SSTable};
 use crate::initializer::initialize;
 use crate::operations::{
     Base, ConnectDB, CreateDB, CreateTable, CreateUser, Get, Insert, SelectUser,
 };
 
-// use std::cell::RefCell;
+use std::cell::RefCell;
 use std::env;
 use std::io::{self, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::process;
-// use std::rc::Rc;
+use std::rc::Rc;
 // use std::thread;
 
 pub mod data_structs;
@@ -94,28 +94,50 @@ fn process_args(args: &[String]) -> std::io::Result<()> {
 }
 
 fn main() {
-    /* let root = Rc::new(RefCell::new(RBNode::new(10, "test", Color::Black, None)));
+    let root = Rc::new(RefCell::new(RBNode::new(
+        String::from("10"),
+        String::from("test"),
+        Color::Black,
+        None,
+    )));
     let mut tree = RBTree::new(root);
 
     let nodes = vec![
-        0, 20, 1, 5, 6, 7, 3, 11, 19, 4, 27, 29, 30, 31, 32, 33, 28, 35,
+        String::from("banana"),
+        String::from("dog"),
+        String::from("cat"),
+        String::from("apple"),
+        String::from("11"),
     ];
     for node in &nodes {
-        tree.insert(*node, "data").unwrap();
+        tree.insert(String::from(node), format!("test{}", String::from(node)))
+            .unwrap();
     }
 
-    let initial_root = tree.find(10);
+    let ss_table = SSTable::new("users_1", "books", "id", 1, 1, &tree).unwrap();
+    let new_table: SSTable<String, String> =
+        SSTable::read_table("users_1", "books", "id", 1, 1).unwrap();
+    println!(
+        "TABLE: {} {}",
+        String::from_utf8(new_table.low_key).unwrap(),
+        String::from_utf8(new_table.high_key).unwrap()
+    );
+    for offset in new_table.offsets {
+        println!("{}", offset);
+    }
+
+    /* let initial_root = tree.find(10);
     initial_root.unwrap().borrow().print_me();
     for node in &nodes {
         let n = tree.find(*node);
         n.unwrap().borrow().print_me();
     }*/
 
-    let args: Vec<String> = env::args().collect();
+    /* let args: Vec<String> = env::args().collect();
     if args.len() == 2 && &args[1] == "start" {
         initialize().unwrap();
         start().unwrap();
     }
 
-    process_args(&args[1..]).unwrap();
+    process_args(&args[1..]).unwrap();*/
 }
