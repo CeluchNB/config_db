@@ -3,7 +3,7 @@ use crate::data_structs::types::{Key, Value};
 use crate::db_constants::{DATA_PATH, DIR_PATH, TABLE_PATH};
 use std::cell::RefCell;
 use std::fs::{File, OpenOptions};
-use std::io::{self, BufRead, BufReader, BufWriter, Read, Write};
+use std::io::{self, BufRead, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::marker::PhantomData;
 use std::rc::Rc;
 
@@ -150,7 +150,7 @@ impl<K: Key, V: Value> SSTable<K, V> {
         }
 
         return Ok(Self {
-            path: String::from(""),
+            path: path_name,
             offsets: offsets,
             low_key: low_key,
             high_key: high_key,
@@ -159,7 +159,54 @@ impl<K: Key, V: Value> SSTable<K, V> {
         });
     }
 
-    /*fn get_value(&self, key: K) -> std::io::Result<V> {
-        Ok(self.phantom_val)
-    }*/
+    pub fn get_value(&self, key: K) -> Option<V> {
+        if key < K::from_utf8(self.low_key.clone()) || key > K::from_utf8(self.high_key.clone()) {
+            return None;
+        }
+        let file = OpenOptions::new().read(true).open(&self.path).unwrap();
+        let mut file = BufReader::new(file);
+
+        let offset_len = self.offsets.len();
+        let mut idx = offset_len / 2;
+        let mut min_idx = 0;
+        let mut max_idx = self.offsets.len() - 1;
+        loop {
+            let current_offset = self.offsets[idx];
+            file.seek(SeekFrom::Start(current_offset as u64)).unwrap();
+
+            // read key
+            let mut buf = [0u8; size_of::<usize>()];
+            file.read_exact(&mut buf).unwrap();
+
+            let key_len = usize::from_le_bytes(buf);
+
+            let mut key_buf = vec![0u8; key_len];
+            file.read_exact(&mut key_buf).unwrap();
+            let current_key = K::from_utf8(key_buf);
+            if current_key == key {
+                let mut val_len_buf = [0u8; size_of::<usize>()];
+                file.read_exact(&mut val_len_buf).unwrap();
+
+                let val_len = usize::from_le_bytes(val_len_buf);
+
+                let mut val_buf = vec![0u8; val_len];
+                file.read_exact(&mut val_buf).unwrap();
+                return Some(V::from_utf8(val_buf));
+            } else {
+                if idx >= max_idx || idx <= min_idx {
+                    return None;
+                }
+                let prev_idx = idx;
+                if current_key < key {
+                    // halfway between current idx and the end
+                    idx = (((idx + max_idx) as f64) / 2_f64).ceil() as usize;
+                    min_idx = prev_idx;
+                } else {
+                    // halfway between current idx and the start
+                    idx = (((idx + min_idx) as f64) / 2_f64).floor() as usize;
+                    max_idx = prev_idx;
+                }
+            }
+        }
+    }
 }

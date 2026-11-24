@@ -94,7 +94,7 @@ fn process_args(args: &[String]) -> std::io::Result<()> {
 }
 
 fn main() {
-    let root = Rc::new(RefCell::new(RBNode::new(
+    /*let root = Rc::new(RefCell::new(RBNode::new(
         String::from("10"),
         String::from("test"),
         Color::Black,
@@ -122,9 +122,23 @@ fn main() {
         String::from_utf8(new_table.low_key).unwrap(),
         String::from_utf8(new_table.high_key).unwrap()
     );
-    for offset in new_table.offsets {
-        println!("{}", offset);
+
+    for node in &nodes {
+        let found = ss_table.get_value(String::from(node));
+        match found {
+            Some(val) => println!("Val {}", val),
+            None => println!("None"),
+        }
     }
+    let found = ss_table.get_value(String::from("baz"));
+    match found {
+        Some(val) => println!("Val {}", val),
+        None => println!("None"),
+    }*/
+
+    /* for offset in new_table.offsets {
+        println!("{}", offset);
+    }*/
 
     /* let initial_root = tree.find(10);
     initial_root.unwrap().borrow().print_me();
@@ -133,11 +147,11 @@ fn main() {
         n.unwrap().borrow().print_me();
     }*/
 
-    /* let args: Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().collect();
     if args.len() == 2 && &args[1] == "start" {
         initialize().unwrap();
         start().unwrap();
     }
 
-    process_args(&args[1..]).unwrap();*/
+    process_args(&args[1..]).unwrap();
 }
