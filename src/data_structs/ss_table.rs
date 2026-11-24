@@ -14,6 +14,10 @@ pub struct SSTable<K: Key, V: Value> {
     pub high_key: Vec<u8>,
     phantom_key: PhantomData<K>,
     phantom_val: PhantomData<V>,
+    db_name: String,
+    table_name: String,
+    key_name: String,
+    level: u8,
 }
 
 struct SSTableItem<K: Key, V: Value> {
@@ -25,6 +29,13 @@ impl<K: Key, V: Value> SSTableItem<K, V> {
     fn new(key: K, val: V) -> Self {
         Self { key, val }
     }
+}
+
+struct FileItem {
+    key_len: usize,
+    key_val: Vec<u8>,
+    val_len: usize,
+    val_val: Vec<u8>,
 }
 
 impl<K: Key, V: Value> SSTable<K, V> {
@@ -83,6 +94,10 @@ impl<K: Key, V: Value> SSTable<K, V> {
             high_key: high_key,
             phantom_key: PhantomData,
             phantom_val: PhantomData,
+            db_name: String::from(db_name),
+            table_name: String::from(table_name),
+            key_name: String::from(key_name),
+            level: level,
         })
     }
 
@@ -156,6 +171,10 @@ impl<K: Key, V: Value> SSTable<K, V> {
             high_key: high_key,
             phantom_key: PhantomData,
             phantom_val: PhantomData,
+            db_name: String::from(db_name),
+            table_name: String::from(table_name),
+            key_name: String::from(key_name),
+            level: level,
         });
     }
 
@@ -208,5 +227,122 @@ impl<K: Key, V: Value> SSTable<K, V> {
                 }
             }
         }
+    }
+
+    pub fn merge(&self, other: &SSTable<K, V>) -> io::Result<SSTable<K, V>> {
+        let mut self_idx = 0;
+        let mut other_idx = 0;
+
+        let file_name = format!("{}_l{}_{}.sstable", self.key_name, self.level + 1, 0);
+        let path_name = format!(
+            "{}{}/{}{}/{}/{}",
+            DIR_PATH, DATA_PATH, self.db_name, TABLE_PATH, self.table_name, file_name
+        );
+        let new_file = File::create(&path_name)?;
+        let mut writer = BufWriter::new(new_file);
+
+        let self_file = OpenOptions::new().read(true).open(&self.path)?;
+        let mut self_file: BufReader<File> = BufReader::new(self_file);
+
+        let other_file = OpenOptions::new().read(true).open(&other.path)?;
+        let mut other_file: BufReader<File> = BufReader::new(other_file);
+
+        let mut low_key = vec![];
+        let mut high_key = vec![];
+        let mut offsets = Vec::new();
+        let mut offset = 0;
+        let mut start = true;
+
+        let mut self_items: Vec<FileItem> = Vec::new();
+        loop {
+            match SSTable::<K, V>::read_item(&mut self_file) {
+                Ok(item) => self_items.push(item),
+                Err(_) => break,
+            }
+        }
+
+        let mut other_items: Vec<FileItem> = Vec::new();
+        loop {
+            match SSTable::<K, V>::read_item(&mut other_file) {
+                Ok(item) => other_items.push(item),
+                Err(_) => break,
+            }
+        }
+
+        loop {
+            if self_idx >= self_items.len() && other_idx >= other_items.len() {
+                break;
+            }
+            offsets.push(offset);
+
+            let active_item: &FileItem;
+            if self_idx < self_items.len() && other_idx < other_items.len() {
+                active_item = if self_items[self_idx].key_val < other_items[other_idx].key_val {
+                    self_idx += 1;
+                    &self_items[self_idx - 1]
+                } else {
+                    other_idx += 1;
+                    &other_items[other_idx - 1]
+                };
+            } else if self_idx < self_items.len() {
+                active_item = &self_items[self_idx];
+                self_idx += 1;
+            } else {
+                active_item = &other_items[other_idx];
+                other_idx += 1;
+            }
+
+            if start {
+                low_key = active_item.key_val.clone();
+                start = false;
+            } else {
+                high_key = active_item.key_val.clone();
+            }
+
+            // write active item
+            writer.write_all(&active_item.key_len.to_le_bytes())?;
+            writer.write_all(&active_item.key_val)?;
+            writer.write_all(&active_item.val_len.to_le_bytes())?;
+            writer.write_all(&active_item.val_val)?;
+
+            offset +=
+                size_of::<usize>() + active_item.key_len + size_of::<usize>() + active_item.val_len;
+        }
+        return Ok(SSTable {
+            path: String::from(path_name),
+            low_key: low_key,
+            high_key: high_key,
+            offsets: offsets,
+            phantom_key: PhantomData,
+            phantom_val: PhantomData,
+            db_name: String::from(&self.db_name),
+            table_name: String::from(&self.table_name),
+            key_name: String::from(&self.key_name),
+            level: 0,
+        });
+    }
+
+    fn read_item(self_file: &mut BufReader<File>) -> io::Result<FileItem> {
+        let mut buf = [0u8; size_of::<usize>()];
+        self_file.read_exact(&mut buf)?;
+
+        let key_len = usize::from_le_bytes(buf);
+
+        let mut key_buf = vec![0u8; key_len];
+        self_file.read_exact(&mut key_buf);
+        let mut val_len_buf = [0u8; size_of::<usize>()];
+        self_file.read_exact(&mut val_len_buf);
+
+        let val_len = usize::from_le_bytes(val_len_buf);
+
+        let mut val_buf = vec![0u8; val_len];
+        self_file.read_exact(&mut val_buf);
+
+        return Ok(FileItem {
+            key_len: key_len,
+            key_val: key_buf,
+            val_len: val_len,
+            val_val: val_buf,
+        });
     }
 }

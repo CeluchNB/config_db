@@ -94,46 +94,61 @@ fn process_args(args: &[String]) -> std::io::Result<()> {
 }
 
 fn main() {
-    /*let root = Rc::new(RefCell::new(RBNode::new(
-        String::from("10"),
-        String::from("test"),
+    /* let first_root = Rc::new(RefCell::new(RBNode::new(
+        String::from("apple"),
+        String::from("testapple"),
         Color::Black,
         None,
     )));
-    let mut tree = RBTree::new(root);
+    let mut first_tree = RBTree::new(first_root);
 
     let nodes = vec![
-        String::from("banana"),
-        String::from("dog"),
         String::from("cat"),
-        String::from("apple"),
-        String::from("11"),
+        String::from("elephant"),
+        String::from("ghost"),
+        String::from("igloo"),
+        String::from("kite"),
+        String::from("mom"),
+        String::from("ocelot"),
+        String::from("quiet"),
+        String::from("stock"),
     ];
     for node in &nodes {
-        tree.insert(String::from(node), format!("test{}", String::from(node)))
+        first_tree
+            .insert(String::from(node), format!("test{}", String::from(node)))
             .unwrap();
     }
 
-    let ss_table = SSTable::new("users_1", "books", "id", 1, 1, &tree).unwrap();
-    let new_table: SSTable<String, String> =
-        SSTable::read_table("users_1", "books", "id", 1, 1).unwrap();
-    println!(
-        "TABLE: {} {}",
-        String::from_utf8(new_table.low_key).unwrap(),
-        String::from_utf8(new_table.high_key).unwrap()
-    );
+    let first_table = SSTable::new("users_1", "books", "id", 1, 1, &first_tree).unwrap();
 
-    for node in &nodes {
-        let found = ss_table.get_value(String::from(node));
-        match found {
-            Some(val) => println!("Val {}", val),
-            None => println!("None"),
-        }
+    let second_root = Rc::new(RefCell::new(RBNode::new(
+        String::from("banana"),
+        String::from("testbanana"),
+        Color::Black,
+        None,
+    )));
+    let mut second_tree = RBTree::new(second_root);
+    let second_nodes = vec![
+        String::from("dog"),
+        String::from("fog"),
+        String::from("house"),
+        String::from("joker"),
+        String::from("louse"),
+        String::from("nope"),
+        String::from("power"),
+        String::from("roast"),
+        String::from("thunder"),
+    ];
+    for node in &second_nodes {
+        second_tree
+            .insert(String::from(node), format!("test{}", String::from(node)))
+            .unwrap();
     }
-    let found = ss_table.get_value(String::from("baz"));
-    match found {
-        Some(val) => println!("Val {}", val),
-        None => println!("None"),
+    let second_table = SSTable::new("users_1", "books", "id", 1, 2, &second_tree).unwrap();
+
+    let merged = first_table.merge(&second_table).unwrap();
+    for offset in merged.offsets {
+        println!("Offset {}", offset);
     }*/
 
     /* for offset in new_table.offsets {
