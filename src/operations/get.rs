@@ -44,7 +44,6 @@ impl<'a> Get<'a> {
             let id: String = String::from(id_arg); // .parse().unwrap();
             match tree.find(id) {
                 Some(result) => {
-                    println!("RESULT {}", result.borrow().val);
                     return true;
                 }
                 None => return false,

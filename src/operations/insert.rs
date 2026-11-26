@@ -2,7 +2,7 @@ use super::Base;
 use crate::data_structs::{Color, RBNode, RBTree, SSTable};
 use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE};
 use crate::file_ops::{Sequence, TableInfo};
-use crate::in_mem_data::DATA;
+use crate::in_mem_data::{DATA, DISK_DATA};
 use std::cell::RefCell;
 use std::fs;
 use std::io;
@@ -87,9 +87,17 @@ impl<'a> Insert<'a> {
 
             println!("Looking for table {}", &table_key);
             let tree = map.get(&String::from(&table_key)).unwrap();
-            if tree.size >= 2 {
-                SSTable::<String, String>::new(&current_db, &table_name, index, 1, 1, &tree)?;
+            if tree.size < 2 {
+                return Ok(());
             }
+
+            let table =
+                SSTable::<String, String>::new(&current_db, &table_name, index, 1, 1, &tree)?;
+            DISK_DATA.with(|disk_map_cell| {
+                let mut disk_map = disk_map_cell.borrow_mut();
+                let key = format!("{}_{}_{}", index, 0, 0);
+                disk_map.insert(key, table);
+            });
             Ok(())
         })?;
 
@@ -139,7 +147,6 @@ impl<'a> Base for Insert<'a> {
     }
 
     fn perform(&self) -> std::io::Result<()> {
-        println!("In perform");
         let current_user = self.current_user()?;
         let current_db = self.current_db(&current_user)?;
         let table_name = self.args[1].clone();
