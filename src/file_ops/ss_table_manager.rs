@@ -1,25 +1,54 @@
+use crate::data_structs::{RBTree, SSTable};
 use crate::db_constants::{DATA_PATH, DIR_PATH};
+use std::collections::HashMap;
 use std::fs;
 use std::io;
 
-pub struct SSTableManager {}
+pub struct SSTableManager {
+    db_name: String,
+    table_name: String,
+    key: String,
+    tables: HashMap<u8, Vec<SSTable<String, String>>>,
+}
 
 impl SSTableManager {
+    pub fn new(db_name: &str, table_name: &str, key: &str) -> Self {
+        return Self {
+            db_name: String::from(db_name),
+            table_name: String::from(table_name),
+            key: String::from(key),
+            tables: HashMap::new(),
+        };
+    }
+
     // atomic write commercial
-    pub fn write(db_name: &str, table_name: &str, key: &str, element: String) -> io::Result<()> {
+    pub fn write(&self, tree: &RBTree<String, String>) -> io::Result<()> {
         // find correct table
         // insert into table
         // decide whether to merge
         // merge to next level
+        // always writing to a l0 table
+        // recursively decide to merge
+        // TODO: START HERE
+        let table = Some(
+            SSTable::new(
+                self.db_name.as_str(),
+                self.table_name.as_str(),
+                self.key.as_str(),
+                0,
+                0,
+                tree,
+            )
+            .unwrap(),
+        );
+
         Ok(())
     }
 
-    fn current_file() {}
-
-    fn current_tables(db_name: &str, table_name: &str, key: &str) -> io::Result<Vec<String>> {
+    fn all_tables(&self) -> io::Result<Vec<String>> {
         let table_dir = format!(
             "{}{}/{}{}/{}",
-            DIR_PATH, DATA_PATH, db_name, "/tables", table_name
+            DIR_PATH, DATA_PATH, self.db_name, "/tables", self.table_name
         );
 
         let mut files = vec![];
@@ -28,7 +57,11 @@ impl SSTableManager {
             let file_type = entry.file_type()?;
 
             if file_type.is_file() {
-                if entry.file_name().to_string_lossy().contains(key) {
+                if entry
+                    .file_name()
+                    .to_string_lossy()
+                    .contains(self.key.as_str())
+                {
                     files.push(entry.file_name().to_string_lossy().to_string());
                 }
             }
