@@ -77,17 +77,21 @@ impl<'a> Base for CreateTable<'a> {
     const OP_NAME: &'static str = "create_table";
 
     fn validate(&self) -> std::io::Result<()> {
+        println!("VALIDATIN");
         if self.args.len() == 1 {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "Missing table name",
             ));
         }
+        println!("AFTER NAME");
 
         let current_user = self.current_user()?;
         if current_user.len() == 0 {
+            println!("NO ACTIVE USER");
             return Err(io::Error::new(io::ErrorKind::Other, "No active user"));
         }
+        println!("AFTER USER");
 
         let current_db = self.current_db(&current_user)?;
 
@@ -102,25 +106,32 @@ impl<'a> Base for CreateTable<'a> {
         let table_path = Path::new(&table_dir);
 
         if table_path.is_dir() {
+            println!("TABLE ALREADY EXISTS");
             return Err(io::Error::new(
                 io::ErrorKind::AlreadyExists,
                 "Table already exists",
             ));
         }
+        println!("AFTER TABLE");
 
         let opts = self.parse_opts()?;
+        println!("AFTER PARSE");
         let field_opt: &str = opts.get("--fields").map(|o| o.as_str()).unwrap_or("");
+        println!("FIELDS {}", field_opt);
         if field_opt.is_empty() {
+            println!("NO FIELDS");
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "Must have at least one field",
             ));
         }
+        println!("AFTER FIELDS");
 
         return Ok(());
     }
 
     fn perform(&self) -> std::io::Result<()> {
+        println!("PERFORMING");
         let current_user = self.current_user()?;
         let current_db = self.current_db(&current_user)?;
         let opts = self.parse_opts()?;
@@ -129,6 +140,7 @@ impl<'a> Base for CreateTable<'a> {
         let idx_opt: &str = opts.get("--idx").map(|o| o.as_str()).unwrap_or("");
         let field_opt: &str = opts.get("--fields").unwrap();
         let fields: Vec<String> = field_opt.split(" ").map(|s| String::from(s)).collect();
+        println!("FIELDS {:?}", fields);
 
         let mut table_info = TableInfo::new(&current_db, &(self.args[1]));
         table_info.initialize_file(impl_opt, idx_opt, &fields)?;

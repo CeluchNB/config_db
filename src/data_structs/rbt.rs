@@ -64,7 +64,7 @@ impl<K: Key, V: Value> RBTree<K, V> {
     pub fn new(root: Rc<RefCell<RBNode<K, V>>>) -> Self {
         Self {
             root: root,
-            size: 0,
+            size: 1,
         }
     }
 

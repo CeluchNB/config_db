@@ -2,7 +2,7 @@ use crate::data_structs::rbt::{RBNode, RBTree};
 use crate::data_structs::types::{Key, Value};
 use crate::db_constants::{DATA_PATH, DIR_PATH, TABLE_PATH};
 use std::cell::RefCell;
-use std::fs::{File, OpenOptions};
+use std::fs::{self, File, OpenOptions};
 use std::io::{self, BufRead, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::marker::PhantomData;
 use std::rc::Rc;
@@ -344,5 +344,10 @@ impl<K: Key, V: Value> SSTable<K, V> {
             val_len: val_len,
             val_val: val_buf,
         });
+    }
+
+    pub fn delete(&self) -> io::Result<()> {
+        fs::remove_file(&self.path)?;
+        Ok(())
     }
 }

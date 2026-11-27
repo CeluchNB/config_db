@@ -162,19 +162,11 @@ fn main() {
         n.unwrap().borrow().print_me();
     }*/
 
-    let string = "test_l113_9";
-    let elements: Vec<&str> = string.split("_").collect();
-    let result: [u8; 2] = [
-        elements[1][1..].parse().unwrap(),
-        elements[2].parse().unwrap(),
-    ];
-    println!("One {}, Two {}", result[0], result[1]);
-
-    /* let args: Vec<String> = env::args().collect();
+    let args: Vec<String> = env::args().collect();
     if args.len() == 2 && &args[1] == "start" {
         initialize().unwrap();
         start().unwrap();
     }
 
-    process_args(&args[1..]).unwrap();*/
+    process_args(&args[1..]).unwrap();
 }

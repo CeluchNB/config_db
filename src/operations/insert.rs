@@ -1,7 +1,7 @@
 use super::Base;
-use crate::data_structs::{Color, RBNode, RBTree, SSTable};
+use crate::data_structs::{Color, RBNode, RBTree};
 use crate::db_constants::{CURRENT_USER_FILE, DATA_PATH, DIR_PATH, REGISTER_FILE};
-use crate::file_ops::{Sequence, TableInfo};
+use crate::file_ops::{SSTableManager, Sequence, TableInfo};
 use crate::in_mem_data::{DATA, DISK_DATA};
 use std::cell::RefCell;
 use std::fs;
@@ -82,22 +82,30 @@ impl<'a> Insert<'a> {
         index: &str,
     ) -> std::io::Result<()> {
         DATA.with(|map_cell| -> std::io::Result<()> {
-            let map = map_cell.borrow_mut();
+            let mut map = map_cell.borrow_mut();
             let table_key = format!("{}_{}", table_name, index);
 
             println!("Looking for table {}", &table_key);
             let tree = map.get(&String::from(&table_key)).unwrap();
+            println!("TREE SIZE {}", tree.size);
             if tree.size < 2 {
                 return Ok(());
             }
 
-            let table =
-                SSTable::<String, String>::new(&current_db, &table_name, index, 1, 1, &tree)?;
             DISK_DATA.with(|disk_map_cell| {
                 let mut disk_map = disk_map_cell.borrow_mut();
-                let key = format!("{}_{}_{}", index, 0, 0);
-                disk_map.insert(key, table);
+                let key = format!("{}_{}_{}", current_db, table_name, index);
+                if let Some(manager) = disk_map.get_mut(&key) {
+                    println!("Writing to same manager");
+                    manager.write(tree).unwrap();
+                } else {
+                    println!("Writing to new manager");
+                    let mut manager = SSTableManager::new(current_db, table_name, index);
+                    manager.write(tree).unwrap();
+                    disk_map.insert(key, manager);
+                }
             });
+            map.remove(&String::from(&table_key));
             Ok(())
         })?;
 
